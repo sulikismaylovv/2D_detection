@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img
 
+
+
 def create_generators(train_data, test_data, image_dir, batch_size=32):
     # ImageDataGenerator for training
     train_generator = ImageDataGenerator(
@@ -19,21 +21,46 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
     )
 
     # ImageDataGenerator for testing (validation)
-    test_generator = ImageDataGenerator()
+    test_generator = ImageDataGenerator(
+        preprocessing_function=tf.keras.applications.vgg16.preprocess_input
+    )
 
-    # Adding 'bbox' column and one-hot encoding 'class' column
-    train_data['bbox'] = train_data.apply(lambda row: [row['bbox_x'], row['bbox_y'], row['bbox_width'], row['bbox_height']], axis=1)
-    test_data['bbox'] = test_data.apply(lambda row: [row['bbox_x'], row['bbox_y'], row['bbox_width'], row['bbox_height']], axis=1)
-    train_data = pd.concat([train_data, pd.get_dummies(train_data['label_name'], prefix='class')], axis=1)
-    test_data = pd.concat([test_data, pd.get_dummies(test_data['label_name'], prefix='class')], axis=1)
+    # One-hot encode the 'label_name' column
+    label_encoder = LabelEncoder()
+    train_data['label_encoded'] = label_encoder.fit_transform(train_data['label_name'])
+    test_data['label_encoded'] = label_encoder.transform(test_data['label_name'])
 
+    num_classes = len(label_encoder.classes_)
 
+    # Convert integer encoded labels to one-hot encoding
+    train_labels_one_hot = tf.keras.utils.to_categorical(train_data['label_encoded'], num_classes=num_classes)
+    test_labels_one_hot = tf.keras.utils.to_categorical(test_data['label_encoded'], num_classes=num_classes)
+
+    # Add bounding box columns to the DataFrame
+    train_data[['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2']] = train_data.apply(
+        lambda row: [row['bbox_x'], row['bbox_y'], row['bbox_x'] + row['bbox_width'], row['bbox_y'] + row['bbox_height']],
+        axis=1, result_type='expand'
+    )
+    test_data[['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2']] = test_data.apply(
+        lambda row: [row['bbox_x'], row['bbox_y'], row['bbox_x'] + row['bbox_width'], row['bbox_y'] + row['bbox_height']],
+        axis=1, result_type='expand'
+    )
+
+    # Add class label columns to the DataFrame
+    for i in range(num_classes):
+        train_data[f'class_{i}'] = train_labels_one_hot[:, i]
+        test_data[f'class_{i}'] = test_labels_one_hot[:, i]
+
+    y_col = ['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2'] + [f'class_{i}' for i in range(num_classes)]
+    #print(train_data)
+    #print(test_data)
+    #print(y_col)
     # Create generators
     train_images = train_generator.flow_from_dataframe(
         dataframe=train_data,
         directory=image_dir,
         x_col='image_name',
-        y_col=['bbox'] + [col for col in train_data.columns if col.startswith('class')],
+        y_col=y_col,
         target_size=(128, 128),
         color_mode='rgb',
         class_mode='multi_output',
@@ -46,13 +73,14 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         dataframe=test_data,
         directory=image_dir,
         x_col='image_name',
-        y_col=['bbox'] + [col for col in test_data.columns if col.startswith('class')],
+        y_col=y_col,
         target_size=(128, 128),
         color_mode='rgb',
         class_mode='multi_output',
         batch_size=batch_size,
         shuffle=False
     )
+        
 
     return train_images, test_images
 
@@ -71,3 +99,4 @@ def widgvis(fig):
     fig.canvas.toolbar_visible = False
     fig.canvas.header_visible = False
     fig.canvas.footer_visible = False
+

@@ -68,7 +68,7 @@ def preprocess_images_and_boxes(df, image_dir, target_size=(128, 128), num_class
         height = row['bbox_height'] / row['image_height']
         boxes.append([x, y, width, height])
 
-        # Append class label
+        # Append one-hot encoded class label
         labels.append(class_labels[idx])
 
     return np.array(images), np.array(boxes), np.array(labels)

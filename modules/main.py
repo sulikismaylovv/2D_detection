@@ -18,6 +18,8 @@ from data_preparation import create_generators, plot_loss_tf
 from evaluation import evaluate_model
 from data_preprocessing import load_bbox_annotations, preprocess_images_and_boxes , plot_image_with_boxes , split_data
 
+num_classes = 3
+
 image_dir = 'data/images_dataset'  # Make sure this is the correct path to your images
 csv_path = 'data/labels.csv'  # Make sure this is the correct path to your labels
 # Load annotations
@@ -80,6 +82,17 @@ if isinstance(test_labels_batch[0], np.ndarray):
 # Inspecting the entire structure of test_labels_batch
 print("Structure of test_labels_batch:", [type(label) for label in test_labels_batch])
 
+# For training data
+train_images_batch, train_labels_batch = next(iter(train_images))
+print("Shape of train_images_batch:", train_images_batch.shape)  # (12, 128, 128, 3)
+print("Shape of train bounding boxes:", train_labels_batch[0].shape)  # (12, 4)
+print("Shape of train class labels:", train_labels_batch[1].shape)  # (12, num_classes)
+
+# For testing data
+test_images_batch, test_labels_batch = next(iter(test_images))
+print("Shape of test_images_batch:", test_images_batch.shape)  # (4, 128, 128, 3)
+print("Shape of test bounding boxes:", test_labels_batch[0].shape)  # (4, 4)
+print("Shape of test class labels:", test_labels_batch[1].shape)  # (4, num_classes)
 
     
 # Create the model
