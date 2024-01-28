@@ -8,11 +8,11 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 # Load CSV
-csv_path = '/home/user/Documents/Thesis/labels.csv'
+csv_path = 'data\labels.csv'
 df = pd.read_csv(csv_path)
 
 # Load images
-image_folder = '/home/user/Documents/Thesis/images_dataset'
+image_folder = 'data/images_dataset'
 images_list = []
 y_labels = []
 

@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from PIL import Image
 
-csv_path = '/home/user/Documents/Thesis/labels.csv'
+csv_path = 'data\labels.csv'
 df = pd.read_csv(csv_path)
 
-image_folder = '/home/user/Documents/Thesis/images_dataset'
+image_folder = 'data\images_dataset'
 
 # Initialize empty lists to store images and labels
 images_list = []  # Renamed from X_images to avoid conflict

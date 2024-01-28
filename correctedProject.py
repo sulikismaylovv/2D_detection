@@ -173,7 +173,7 @@ def create_vgg16_model():
 
 # Set the current working directory
 print("Current Working Directory:", os.getcwd())
-dataset = '/home/user/Documents/Thesis/images_dataset'
+dataset = 'data/images_dataset'
 
 if os.path.exists(dataset):
     print("Path exists:", dataset)
@@ -186,7 +186,7 @@ else:
 walk_through_dir(dataset)
 
 # Load bounding box annotations from CSV
-csv_path = '/home/user/Documents/Thesis/labels.csv'
+csv_path = 'data/labels.csv'
 bbox_annotations = load_bbox_annotations(csv_path)
 
 # Display information about 11 images
@@ -324,7 +324,7 @@ print(len(train_data))
 
 # Print actual filenames in the dataset directory
 print("Actual Filenames in Dataset Directory:")
-dataset_path = '/home/user/Documents/Thesis/images_dataset'
+dataset_path = 'data/images_dataset'
 actual_filenames = [filename for filename in os.listdir(dataset_path) if os.path.isfile(os.path.join(dataset_path, filename))]
 print(actual_filenames)
 
