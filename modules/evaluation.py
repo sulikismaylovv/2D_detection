@@ -5,6 +5,8 @@ import matplotlib.patches as patches
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.metrics import CategoricalAccuracy, MeanAbsoluteError
+
 
 def plot_bounding_boxes(image, true_boxes, pred_boxes, title=""):
     """
@@ -32,28 +34,17 @@ def plot_bounding_boxes(image, true_boxes, pred_boxes, title=""):
     plt.show()
 
 def evaluate_model(model, test_generator, num_samples=10):
-    """
-    Evaluates the model on a number of samples from the test generator and visualizes the predictions.
-    
-    :param model: The trained model
-    :param test_generator: The test data generator
-    :param num_samples: Number of samples to evaluate
-    """
+    mae = MeanAbsoluteError()
+    cat_acc = CategoricalAccuracy()
+
     for i in range(num_samples):
-        # Retrieve the next batch from the test generator
-        x, y_true = next(test_generator)
+        x, y = next(test_generator)
         y_pred = model.predict(x)
+        mae.update_state(y['bbox'], y_pred['bbox'])
+        cat_acc.update_state(y['class'], y_pred['class'])
 
-        # Convert the first image in the batch to a displayable format
-        image = x[0] * 255  # Assuming preprocessing involves scaling by 1/255
-        image = np.array(image, dtype=np.uint8)
+    print(f"Bounding Box MAE: {mae.result().numpy()}, Classification Accuracy: {cat_acc.result().numpy()}")
 
-        # True and predicted boxes for the first image in the batch
-        true_boxes = y_true[0].reshape(-1, 4)
-        pred_boxes = y_pred[0].reshape(-1, 4)
-
-        # Plot the image with bounding boxes
-        plot_bounding_boxes(image, true_boxes, pred_boxes, title=f"Sample {i+1}")
 
 # Usage in your main script
 # from evaluation import evaluate_model

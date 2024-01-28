@@ -1,12 +1,10 @@
 #main.py
 import matplotlib.pyplot as plt
-from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.applications import VGG16
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras import layers
-from tensorflow.keras.layers import Flatten
-
+from tensorflow.keras.layers import Input, Flatten, Dense, Dropout, Lambda
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 
 
 from pathlib import Path
@@ -15,7 +13,7 @@ import os
 
 
 # Import other module functions
-from data_preparation import load_bbox_annotations, create_generators, plot_loss_tf
+from data_preparation import create_generators, plot_loss_tf
 from evaluation import evaluate_model
 from data_preprocessing import load_bbox_annotations, preprocess_images_and_boxes , plot_image_with_boxes , split_data
 
@@ -25,66 +23,85 @@ csv_path = 'data/labels.csv'  # Make sure this is the correct path to your label
 bbox_annotations = load_bbox_annotations(csv_path)
 
 # Preprocess images and boxes
-images, boxes = preprocess_images_and_boxes(bbox_annotations, image_dir)
+images, boxes, labels = preprocess_images_and_boxes(bbox_annotations, image_dir)
 
 # Split data into training and testing sets
 train_df, test_df = split_data(bbox_annotations)
 # Create data generators
 train_images, test_images = create_generators(train_df, test_df, image_dir)
     
+# Show train and test df
+print(train_df)
+print(test_df)
+
+# create train_bboxes and test_bboxes
+train_bboxes = train_df['bbox'].values.tolist()
+test_bboxes = test_df['bbox'].values.tolist()
+
+# create train_labels and test_labels
+train_labels = train_df['label_encoded'].values.tolist()
+test_labels = test_df['label_encoded'].values.tolist()
+
+print(train_images)
+print(test_images)
+
+
     
+# Create the model
+
+def create_rcnn_model(input_shape=(128, 128, 3), num_classes=3):
+    inputs = Input(shape=input_shape)
+    # Base model, without the top layers
+    base_model = VGG16(weights='imagenet', include_top=False, input_tensor=inputs)
+    base_model.trainable = False
+
+    # Use a lambda layer to convert feature maps to a single vector
+    x = Lambda(lambda x: tf.reduce_mean(x, axis=[1, 2]))(base_model.output)
     
+    # Bounding box head
+    bbox_head = Dense(256, activation='relu')(x)
+    bbox_head = Dropout(0.5)(bbox_head)
+    bboxes = Dense(4, activation='sigmoid', name='bboxes')(bbox_head)
     
+    # Classification head
+    class_head = Dense(256, activation='relu')(x)
+    class_head = Dropout(0.5)(class_head)
+    classes = Dense(num_classes, activation='softmax', name='classes')(class_head)
 
-# Function to create the VGG16-based model
-def create_vgg16_model(input_shape=(128, 128, 3)):
-    pretrained_model = VGG16(
-        input_shape=(128, 128, 3),
-        include_top=False,
-        weights='imagenet',
-        pooling='avg'
-    )
-
-    pretrained_model.trainable = False
-
-    # Add custom layers on top of the pretrained model
-    model = Sequential([
-        pretrained_model,
-        Flatten(),  # Flatten the output of VGG16
-        Dense(256, activation='relu'),
-        Dropout(0.2),
-        Dense(256, activation='relu'),
-        Dropout(0.2),
-        Dense(4, activation='sigmoid')  # Output layer for bounding box coordinates
-    ])
-
+    # The model
+    model = Model(inputs=inputs, outputs=[bboxes, classes])
+    
     return model
 
-model = create_vgg16_model()
-sample_batch = next(iter(train_images))  # Get a sample batch from the training data
-sample_batch = next(iter(train_images))
-print("Batch image shape:", sample_batch[0].shape)
-model.build(input_shape=sample_batch[0].shape)
-model.compile(optimizer=Adam(learning_rate=0.001), loss='mse', metrics=['mae'])  # Using Mean Absolute Error as a metric
+model = create_rcnn_model()
 
-# Display model summary
+# Compile the model
+model.compile(optimizer=Adam(learning_rate=1e-4),
+              loss={'bboxes': 'mse', 'classes': 'categorical_crossentropy'},
+              metrics={'bboxes': 'mean_squared_error', 'classes': 'accuracy'})
+
+# Displaying model summary
 model.summary()
 
-# Train the model
-history = model.fit(train_images, epochs=30, steps_per_epoch=len(train_images), validation_data=test_images, validation_steps=len(test_images))
+# Training the model using the data generators
+history = model.fit(
+    train_images,
+    epochs=30,
+    steps_per_epoch=len(train_images),
+    validation_data=test_images,
+    validation_steps=len(test_images)
+)
 
-# Evaluate the model on the test set
+# Evaluating the model on the test set using the test data generator
 results = model.evaluate(test_images)
 print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
 
-# Plot training and validation loss
+# Plotting training and validation loss
 plot_loss_tf(history)
 
-evaluate_model(model, test_images, num_samples=10)
-
-# Predict bounding box coordinates on the test set
+# Predicting bounding box coordinates on the test set using the test data generator
 pred_bbox = model.predict(test_images)
 
-# You can also add any additional visualization or analysis as needed here
+# Additional visualization or analysis here
 # ...
 
