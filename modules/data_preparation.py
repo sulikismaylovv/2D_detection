@@ -30,27 +30,29 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
     train_data['label_encoded'] = label_encoder.fit_transform(train_data['label_name'])
     test_data['label_encoded'] = label_encoder.transform(test_data['label_name'])
 
+    # Get the number of classes (this assumes label_encoder has been fitted on all possible labels)
     num_classes = len(label_encoder.classes_)
+    print(f"Number of classes: {num_classes}")
 
     # Convert integer encoded labels to one-hot encoding
     train_labels_one_hot = tf.keras.utils.to_categorical(train_data['label_encoded'], num_classes=num_classes)
     test_labels_one_hot = tf.keras.utils.to_categorical(test_data['label_encoded'], num_classes=num_classes)
 
-    # Add bounding box columns to the DataFrame
-    train_data[['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2']] = train_data.apply(
-        lambda row: [row['bbox_x'], row['bbox_y'], row['bbox_x'] + row['bbox_width'], row['bbox_y'] + row['bbox_height']],
-        axis=1, result_type='expand'
-    )
-    test_data[['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2']] = test_data.apply(
-        lambda row: [row['bbox_x'], row['bbox_y'], row['bbox_x'] + row['bbox_width'], row['bbox_y'] + row['bbox_height']],
-        axis=1, result_type='expand'
-    )
+    train_data['bbox'] = train_data.apply(lambda row: [row['bbox_x'], row['bbox_y'], row['bbox_x'] + row['bbox_width'], row['bbox_y'] + row['bbox_height']], axis=1)
+    test_data['bbox'] = test_data.apply(lambda row: [row['bbox_x'], row['bbox_y'], row['bbox_x'] + row['bbox_width'], row['bbox_y'] + row['bbox_height']], axis=1)
 
-    # Add class label columns to the DataFrame
+    #print(train_data)
+    #print(test_data)
+    
+    # Add bbox and one-hot encoded labels to train_data and test_data DataFrames
+    train_data[['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2']] = pd.DataFrame(train_data['bbox'].tolist(), index=train_data.index)
+    test_data[['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2']] = pd.DataFrame(test_data['bbox'].tolist(), index=test_data.index)
+
     for i in range(num_classes):
         train_data[f'class_{i}'] = train_labels_one_hot[:, i]
         test_data[f'class_{i}'] = test_labels_one_hot[:, i]
 
+    # Define 'y_col' as a list of column names to be used as target labels
     y_col = ['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2'] + [f'class_{i}' for i in range(num_classes)]
     #print(train_data)
     #print(test_data)
