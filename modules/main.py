@@ -5,6 +5,7 @@ from tensorflow.keras.layers import Input, Flatten, Dense, Dropout, Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
+import numpy as np
 
 
 from pathlib import Path
@@ -34,6 +35,14 @@ train_images, test_images = create_generators(train_df, test_df, image_dir)
 print(train_df)
 print(test_df)
 
+## pritn space between train and test df
+print("\
+\n\
+\n\
+\n\
+    ")
+
+
 # create train_bboxes and test_bboxes
 train_bboxes = train_df['bbox'].values.tolist()
 test_bboxes = test_df['bbox'].values.tolist()
@@ -42,8 +51,34 @@ test_bboxes = test_df['bbox'].values.tolist()
 train_labels = train_df['label_encoded'].values.tolist()
 test_labels = test_df['label_encoded'].values.tolist()
 
-print(train_images)
-print(test_images)
+# Extract a batch from the training data
+train_images_batch, train_labels_batch = next(iter(train_images))
+
+# Inspecting the shape of the batch
+print("Shape of train_images_batch:", train_images_batch.shape)
+# Display the structure of the first element in the labels list
+print("First element in train_labels_batch:", train_labels_batch[0])
+print("Type of first element in train_labels_batch:", type(train_labels_batch[0]))
+
+# If the first element is a NumPy array, print its shape
+if isinstance(train_labels_batch[0], np.ndarray):
+    print("Shape of first element in train_labels_batch:", train_labels_batch[0].shape)
+
+# Inspecting the entire structure of train_labels_batch
+print("Structure of train_labels_batch:", [type(label) for label in train_labels_batch])
+# Similarly for test data
+test_images_batch, test_labels_batch = next(iter(test_images))
+print("Shape of test_images_batch:", test_images_batch.shape)
+# Display the structure of the first element in the labels list
+print("First element in test_labels_batch:", test_labels_batch[0])
+print("Type of first element in test_labels_batch:", type(test_labels_batch[0]))
+
+# If the first element is a NumPy array, print its shape
+if isinstance(test_labels_batch[0], np.ndarray):
+    print("Shape of first element in test_labels_batch:", test_labels_batch[0].shape)
+
+# Inspecting the entire structure of test_labels_batch
+print("Structure of test_labels_batch:", [type(label) for label in test_labels_batch])
 
 
     
