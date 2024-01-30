@@ -6,6 +6,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 import numpy as np
+import matplotlib.patches as patches
 
 
 from pathlib import Path
@@ -201,33 +202,45 @@ import pandas as pd
 
 
 def predict_random_image(model, image_dir, csv_path, input_shape=(128, 128)):
-    # Load the CSV file to get the labels
+    # Load the CSV file to get the labels and bounding boxes
     bbox_annotations = pd.read_csv(csv_path)
 
-    # List all images in the directory
-    image_files = [f for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
+    # List images in the directory (or a predefined list of images)
+    image_files = ['image1.jpeg', 'image2.jpeg', 'image3.jpeg', 'image4.jpeg', 'image5.jpeg' , 'image6.jpeg' , 'image7.jpeg' ]
     random_image = random.choice(image_files)
     
     # Load and preprocess the image
     img = load_img(os.path.join(image_dir, random_image), target_size=input_shape)
     img_array = img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+    img_array_expanded = np.expand_dims(img_array, axis=0)  # Add batch dimension
 
-    # Predict
-    prediction = model.predict(img_array)
+    # Predict the class
+    prediction = model.predict(img_array_expanded)
     predicted_class_index = np.argmax(prediction, axis=1)
-
-    # Retrieve the actual label from the CSV file
-    actual_label = bbox_annotations[bbox_annotations['image_name'] == random_image]['label_name'].values[0]
-
-    # Map the predicted class index to its label name
     label_encoder = LabelEncoder()
     bbox_annotations['label_encoded'] = label_encoder.fit_transform(bbox_annotations['label_name'])
     predicted_label = label_encoder.inverse_transform(predicted_class_index)[0]
 
-    # Display the image and prediction
-    plt.imshow(img)
-    plt.title(f"Predicted Class: {predicted_label}, Actual Class: {actual_label}")
+    # Display the image, bounding box, and prediction
+    fig, ax = plt.subplots()
+    ax.imshow(img)
+
+    # Get the original image dimensions
+    original_img = plt.imread(os.path.join(image_dir, random_image))
+    orig_width, orig_height = original_img.shape[1], original_img.shape[0]
+
+    # Scale factor for bounding boxes
+    x_scale = input_shape[1] / orig_width
+    y_scale = input_shape[0] / orig_height
+
+    # Draw bounding box
+    for _, row in bbox_annotations[bbox_annotations['image_name'] == random_image].iterrows():
+        scaled_rect = patches.Rectangle((row['bbox_x'] * x_scale, row['bbox_y'] * y_scale), 
+                                        row['bbox_width'] * x_scale, row['bbox_height'] * y_scale, 
+                                        linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_patch(scaled_rect)
+
+    plt.title(f"Predicted Class: {predicted_label}, Actual Class: {row['label_name']}")
     plt.show()
 
 # Example usage
