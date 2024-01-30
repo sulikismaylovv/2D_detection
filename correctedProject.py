@@ -272,7 +272,7 @@ test_generator = ImageDataGenerator(
 # Print filenames from CSV
 print("Filenames from CSV:")
 print(list(train_data['image_name']))
-dataset = '/home/user/Documents/Thesis/images_dataset'
+dataset = 'data/images_dataset'
 # Create train image generator
 train_images = train_generator.flow_from_dataframe(
     dataframe=train_data,
@@ -327,6 +327,18 @@ print("Actual Filenames in Dataset Directory:")
 dataset_path = 'data/images_dataset'
 actual_filenames = [filename for filename in os.listdir(dataset_path) if os.path.isfile(os.path.join(dataset_path, filename))]
 print(actual_filenames)
+
+# For training data
+train_images_batch, train_labels_batch = next(iter(train_images))
+print("Shape of train_images_batch:", train_images_batch.shape)  # (12, 128, 128, 3)
+print("Shape of train bounding boxes:", train_labels_batch[0].shape)  # (12, 4)
+print("Shape of train class labels:", train_labels_batch[1].shape)  # (12, num_classes)
+
+# For testing data
+test_images_batch, test_labels_batch = next(iter(test_images))
+print("Shape of test_images_batch:", test_images_batch.shape)  # (4, 128, 128, 3)
+print("Shape of test bounding boxes:", test_labels_batch[0].shape)  # (4, 4)
+print("Shape of test class labels:", test_labels_batch[1].shape)  # (4, num_classes)
 
 # Train the model
 history = model.fit(

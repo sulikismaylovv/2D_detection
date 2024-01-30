@@ -52,11 +52,8 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         train_data[f'class_{i}'] = train_labels_one_hot[:, i]
         test_data[f'class_{i}'] = test_labels_one_hot[:, i]
 
-    # Define 'y_col' as a list of column names to be used as target labels
-    y_col = ['bbox_x1', 'bbox_y1', 'bbox_x2', 'bbox_y2'] + [f'class_{i}' for i in range(num_classes)]
-    #print(train_data)
-    #print(test_data)
-    #print(y_col)
+    y_col = [f'class_{i}' for i in range(num_classes)]
+
     # Create generators
     train_images = train_generator.flow_from_dataframe(
         dataframe=train_data,
@@ -65,7 +62,7 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         y_col=y_col,
         target_size=(128, 128),
         color_mode='rgb',
-        class_mode='multi_output',
+        class_mode='raw',  # Use 'raw' as we provide labels directly
         batch_size=batch_size,
         shuffle=True,
         seed=42
@@ -78,7 +75,7 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         y_col=y_col,
         target_size=(128, 128),
         color_mode='rgb',
-        class_mode='multi_output',
+        class_mode='raw',  # Use 'raw' as we provide labels directly
         batch_size=batch_size,
         shuffle=False
     )
