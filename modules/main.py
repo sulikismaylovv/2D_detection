@@ -12,9 +12,11 @@ import time
 from sklearn.model_selection import KFold
 
 # Import other module functions
-from data_preparation import create_generators, plot_loss_tf
+from data_preparation import create_generators, plot_loss_tf, generate_augmented_images_from_generator
 from data_preprocessing import load_annotations, split_data
 from tensorflow.keras.callbacks import EarlyStopping
+
+import os
 
 num_classes = 3
 
@@ -30,11 +32,25 @@ train_df, test_df = split_data(annotations)
 # Create data generators
 train_images, test_images = create_generators(train_df, test_df, image_dir)
 
-print(train_images.class_indices)
-print(test_images.class_indices)
+# Assuming you want to generate 5 augmented images per original image
+total_number_per_image = 5
+
+# Generate augmented images and update CSV
+generate_augmented_images_from_generator(train_images, total_number_per_image, "data/augmented_images")
+
+# Update train data with new file names
+augmented_files = os.listdir("data/augmented_images")
+train_df_augmented = train_df.copy()
+
+for file_name in augmented_files:
+    if file_name.endswith(".jpg"):
+        train_df_augmented = train_df_augmented.append({'image_name': file_name, 'label_name': file_name.split("_")[0]}, ignore_index=True)
+
+# Create data generators again with updated data
+train_images_augmented, _ = create_generators(train_df_augmented, test_df, image_dir)
 
 # Compute class weights
-labels = train_df['label_name'].values
+labels = train_df_augmented['label_name'].values
 unique_labels = np.unique(labels)
 label_to_index = {label: index for index, label in enumerate(unique_labels)}
 train_labels_index = np.array([label_to_index[label] for label in labels])
@@ -42,8 +58,8 @@ train_labels_index = np.array([label_to_index[label] for label in labels])
 # After encoding labels but before training
 class_weights = compute_class_weight(
     class_weight='balanced',
-    classes=np.unique(train_df['label_encoded']),  # Ensure this uses the encoded labels
-    y=train_df['label_encoded']
+    classes=np.unique(train_df_augmented['label_encoded']),  # Ensure this uses the encoded labels
+    y=train_df_augmented['label_encoded']
 )
 class_weights_dict = dict(enumerate(class_weights))
 
@@ -87,7 +103,7 @@ def train_and_evaluate_model(train_data, test_data):
     history = model.fit(
         train_data,
         epochs=30,
-        steps_per_epoch=len(train_data)/32,
+        steps_per_epoch=len(train_data)//32,
         validation_data=test_data,
         validation_steps=len(test_data),
         class_weight=class_weights_dict,
@@ -125,7 +141,7 @@ print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
 plot_loss_tf(history)
 
 # Save the best model as model - (timestamped) .h5 file in folder models/
-model.save(f'models/model - {time.time()}.h5')
+model.save(f'models/model_{time.time()}.h5')
 
 
 print("Model training and first evaluation completed.")

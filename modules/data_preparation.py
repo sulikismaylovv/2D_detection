@@ -61,6 +61,8 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         batch_size=batch_size,
         shuffle=False
     )
+    
+    
 
     return train_images, test_images
 
@@ -80,4 +82,27 @@ def widgvis(fig):
     fig.canvas.toolbar_visible = False
     fig.canvas.header_visible = False
     fig.canvas.footer_visible = False
+
+import os
+
+def generate_augmented_images_from_generator(train_generator, total_number_per_image, output_directory):
+    # Create output directory if it doesn't exist
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+    
+    # Initialize the ImageDataGenerator
+    data_gen = train_generator
+    
+    # Generate augmented images
+    for i, (images, labels) in enumerate(data_gen):
+        if i >= len(train_generator.filenames):
+            break
+        
+        image_name = os.path.basename(train_generator.filenames[i])
+        image_name_no_extension, _ = os.path.splitext(image_name)
+        
+        for j in range(total_number_per_image):
+            augmented_image_path = os.path.join(output_directory, f"{image_name_no_extension}_{j}.jpg")
+            augmented_image = images[j].astype(np.uint8)
+            tf.keras.preprocessing.image.save_img(augmented_image_path, augmented_image)
 

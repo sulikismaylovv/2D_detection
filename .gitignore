@@ -5,6 +5,7 @@ venv/
 *.egg-info/
 dist/
 build/
+data/
 
 # Machine Learning
 model/
