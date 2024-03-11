@@ -6,7 +6,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 
 
-def create_generators(train_data, test_data, image_dir, batch_size=32):
+def create_generators(train_data, test_data, image_dir, batch_size=64):
     # ImageDataGenerator for training with augmentation
     train_generator = ImageDataGenerator(
         rotation_range=20,

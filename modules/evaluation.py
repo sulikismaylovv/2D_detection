@@ -96,7 +96,7 @@ if best_model:
     # plot_history(history)
 
     # Predicting on random images
-    for i in range(5):
+    for i in range(10):
         predict_random_image(best_model, image_dir, csv_path)
 else:
     print("Model not found or could not be loaded.")
