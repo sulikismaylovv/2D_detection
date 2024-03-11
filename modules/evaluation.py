@@ -6,7 +6,7 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import os
 import pandas as pd
 import random
-from data_preprocessing import load_bbox_annotations, preprocess_images_and_boxes, split_data
+from data_preprocessing import load_annotations, split_data
 from data_preparation import create_generators
 
 # Assuming the model and history are saved during the training process
@@ -81,8 +81,7 @@ image_dir = 'data/images_dataset'
 csv_path = 'data/labels.csv'
 
 # Load and preprocess data
-bbox_annotations = load_bbox_annotations(csv_path)
-images, boxes, labels = preprocess_images_and_boxes(bbox_annotations, image_dir)
+bbox_annotations = load_annotations(csv_path)
 train_df, test_df = split_data(bbox_annotations)
 
 # Initialize test_images data generator

@@ -1,8 +1,8 @@
 label_name,image_name,image_width,image_height
 Box3,box_brown_1.jpg,1200,1600
 Box3,box_brown_4.jpg,1200,1600
-Box3,box_brown_8.jpg,1200,1600
-Box3,box_brown_9.jpg,1200,1600
+Box3,box_brown8.jpg,1200,1600
+Box3,box_brown9.jpg,1200,1600
 Box2,box_kinect_1.JPG,1200,1600
 Box2,box_kinect_2.JPG,1200,1600
 Box2,box_kinect_3.JPG,1200,1600
