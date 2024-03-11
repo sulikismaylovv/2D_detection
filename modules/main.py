@@ -6,6 +6,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.keras.metrics import Precision, Recall
 import time
@@ -33,18 +34,21 @@ train_df, test_df = split_data(annotations)
 train_images, test_images = create_generators(train_df, test_df, image_dir)
 
 # Assuming you want to generate 5 augmented images per original image
-total_number_per_image = 5
+total_number_per_image = 7
 
 # Generate augmented images and update CSV
-generate_augmented_images_from_generator(train_images, total_number_per_image, "data/augmented_images")
+#generate_augmented_images_from_generator(train_images, total_number_per_image, "data/augmented_images")
 
 # Update train data with new file names
 augmented_files = os.listdir("data/augmented_images")
 train_df_augmented = train_df.copy()
 
+new_rows = []
 for file_name in augmented_files:
     if file_name.endswith(".jpg"):
-        train_df_augmented = train_df_augmented.append({'image_name': file_name, 'label_name': file_name.split("_")[0]}, ignore_index=True)
+        new_rows.append({'image_name': file_name, 'label_name': file_name.split("_")[0]})
+
+train_df_augmented = pd.concat([train_df_augmented, pd.DataFrame(new_rows)], ignore_index=True)
 
 # Create data generators again with updated data
 train_images_augmented, _ = create_generators(train_df_augmented, test_df, image_dir)
@@ -65,7 +69,7 @@ class_weights_dict = dict(enumerate(class_weights))
 
 
 # Create the model
-def create_model(input_shape=(128, 128, 3), num_classes=3, fine_tune=5):
+def create_model(input_shape=(256, 256, 3), num_classes=3, fine_tune=5):
     inputs = Input(shape=input_shape)
     base_model = VGG16(weights='imagenet', include_top=False, input_tensor=inputs)
 
@@ -120,7 +124,7 @@ models = []
 histories = []
 for train, test in kfold.split(labels):
     print(f'Training for fold {fold_no} ...')
-    model, history = train_and_evaluate_model(train_images, test_images)
+    model, history = train_and_evaluate_model(train_images_augmented, test_images)
     models.append(model)
     histories.append(history)
     fold_no += 1
@@ -134,7 +138,7 @@ best_model = models[best_model_index]
 
 # Evaluating the best model (if a separate test set is available)
 # Replace `separate_test_images` and `separate_test_labels` with your actual test data
-results = best_model.evaluate(test_images)
+results = best_model.evaluate(train_images)
 print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
 
 # Plot training and validation loss and accuracy
