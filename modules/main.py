@@ -8,12 +8,13 @@ import tensorflow as tf
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.keras.metrics import Precision, Recall
-
+import time
 from sklearn.model_selection import KFold
 
 # Import other module functions
 from data_preparation import create_generators, plot_loss_tf
 from data_preprocessing import load_annotations, split_data
+from tensorflow.keras.callbacks import EarlyStopping
 
 num_classes = 3
 
@@ -81,23 +82,50 @@ def train_and_evaluate_model(train_data, test_data):
                   loss='categorical_crossentropy',
                   metrics=['accuracy', Precision(), Recall()])
 
+    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+
     history = model.fit(
         train_data,
         epochs=30,
-        steps_per_epoch=len(train_data),
+        steps_per_epoch=len(train_data)/32,
         validation_data=test_data,
         validation_steps=len(test_data),
-        class_weight=class_weights_dict
+        class_weight=class_weights_dict,
+        callbacks=[early_stopping]
     )
     return model, history
 
 # Train and evaluate the model
-model, history = train_and_evaluate_model(train_images, test_images)
+# K-Fold Cross Validation
+num_folds = 5
+kfold = KFold(n_splits=num_folds, shuffle=True)
+fold_no = 1
+models = []
+histories = []
+for train, test in kfold.split(labels):
+    print(f'Training for fold {fold_no} ...')
+    model, history = train_and_evaluate_model(train_images, test_images)
+    models.append(model)
+    histories.append(history)
+    fold_no += 1
+    
+    
+# Selecting the best model
+# Assuming selection based on highest validation accuracy
+best_model_index = np.argmax([max(history.history['val_accuracy']) for history in histories])
+best_model = models[best_model_index]
+
+
+# Evaluating the best model (if a separate test set is available)
+# Replace `separate_test_images` and `separate_test_labels` with your actual test data
+results = best_model.evaluate(test_images)
+print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
 
 # Plot training and validation loss and accuracy
 plot_loss_tf(history)
 
-# Save the best model
-model.save('best_model.h5')
+# Save the best model as model - (timestamped) .h5 file in folder models/
+model.save(f'models/model - {time.time()}.h5')
+
 
 print("Model training and first evaluation completed.")

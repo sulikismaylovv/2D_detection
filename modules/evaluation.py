@@ -13,7 +13,7 @@ from data_preparation import create_generators
 def load_best_model():
     # Placeholder for your model loading code
     # For example, if you saved your model as 'best_model.h5':
-    model = tf.keras.models.load_model('/Users/suleymanismaylov/Desktop/2D/2D_detection/best_model.h5')
+    model = tf.keras.models.load_model('models/best_model.h5')
     return model
 
 def evaluate_model(model, test_images):
@@ -96,7 +96,7 @@ if best_model:
     # plot_history(history)
 
     # Predicting on random images
-    for i in range(10):
+    for i in range(0):
         predict_random_image(best_model, image_dir, csv_path)
 else:
     print("Model not found or could not be loaded.")
