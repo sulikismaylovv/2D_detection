@@ -6,10 +6,10 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 
 
-def create_generators(train_data, test_data, image_dir, batch_size=32):
+def create_generators(train_data, test_data, image_dir, batch_size=16):
     # ImageDataGenerator for training with augmentation
     train_generator = ImageDataGenerator(
-        rotation_range=20,
+        rotation_range=40,
         width_shift_range=0.2,
         height_shift_range=0.2,
         shear_range=0.2,
@@ -46,8 +46,7 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         target_size=(256, 256),
         color_mode='rgb',
         class_mode='categorical',
-        batch_size=batch_size,
-        shuffle=True
+        batch_size=batch_size
     )
 
     test_images = test_generator.flow_from_dataframe(
@@ -58,8 +57,7 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         target_size=(256, 256),
         color_mode='rgb',
         class_mode='categorical',
-        batch_size=batch_size,
-        shuffle=False
+        batch_size=batch_size
     )
     
     
