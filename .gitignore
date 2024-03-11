@@ -1,0 +1,23 @@
+# Python
+*.pyc
+__pycache__/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Machine Learning
+model/
+data/
+*.h5
+*.pkl
+*.pth
+*.npz
+*.npy
+*.csv
+*.tsv
+*.txt
+*.json
+*.xml
+*.yaml
+*.yml
