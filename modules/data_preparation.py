@@ -17,6 +17,7 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         shear_range=0.2,
         zoom_range=0.2,
         horizontal_flip=True,
+        vertical_flip=True,
         fill_mode='nearest',
     )
 

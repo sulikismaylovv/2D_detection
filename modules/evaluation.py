@@ -1,51 +1,103 @@
-# evaluation.py
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import numpy as np
+import matplotlib.pyplot as plt
 import tensorflow as tf
+from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
-from tensorflow.keras.metrics import CategoricalAccuracy, MeanAbsoluteError
+import os
+import pandas as pd
+import random
+from data_preprocessing import load_bbox_annotations, preprocess_images_and_boxes, split_data
+from data_preparation import create_generators
 
+# Assuming the model and history are saved during the training process
+def load_best_model():
+    # Placeholder for your model loading code
+    # For example, if you saved your model as 'best_model.h5':
+    model = tf.keras.models.load_model('/Users/suleymanismaylov/Desktop/2D/2D_detection/best_model.h5')
+    return model
 
-def plot_bounding_boxes(image, true_boxes, pred_boxes, title=""):
-    """
-    Plots the actual and predicted bounding boxes on the image.
-    
-    :param image: The image data
-    :param true_boxes: Actual bounding boxes
-    :param pred_boxes: Predicted bounding boxes
-    :param title: Title of the plot
-    """
-    fig, ax = plt.subplots(1)
-    ax.imshow(image)
+def evaluate_model(model, test_images):
+    results = model.evaluate(test_images)
+    print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
 
-    # Plot true boxes
-    for box in true_boxes:
-        rect = patches.Rectangle((box[0], box[1]), box[2], box[3], linewidth=2, edgecolor='g', facecolor='none', label='True Box')
-        ax.add_patch(rect)
+def plot_history(history):
+    # Plot training & validation accuracy values
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
 
-    # Plot predicted boxes
-    for box in pred_boxes:
-        rect = patches.Rectangle((box[0], box[1]), box[2], box[3], linewidth=2, edgecolor='r', facecolor='none', label='Pred Box')
-        ax.add_patch(rect)
-
-    plt.title(title)
+    # Plot training & validation loss values
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
 
-def evaluate_model(model, test_generator, num_samples=10):
-    mae = MeanAbsoluteError()
-    cat_acc = CategoricalAccuracy()
+def predict_random_image(model, image_dir, csv_path, input_shape=(128, 128)):
+    bbox_annotations = pd.read_csv(csv_path)
+    image_files = bbox_annotations['image_name'].unique().tolist()
+    random_image = random.choice(image_files)
 
-    for i in range(num_samples):
-        x, y = next(test_generator)
-        y_pred = model.predict(x)
-        mae.update_state(y['bbox'], y_pred['bbox'])
-        cat_acc.update_state(y['class'], y_pred['class'])
+    img = load_img(os.path.join(image_dir, random_image), target_size=input_shape)
+    img_array = img_to_array(img)
+    img_array_expanded = np.expand_dims(img_array, axis=0)  # Add batch dimension
 
-    print(f"Bounding Box MAE: {mae.result().numpy()}, Classification Accuracy: {cat_acc.result().numpy()}")
+    prediction = model.predict(img_array_expanded)
+    
+    # Detailed explanation of prediction
+    print("Raw prediction output (probabilities for each class):", prediction)
+    
+    # For each class, print the probability
+    label_encoder = LabelEncoder()
+    bbox_annotations['label_encoded'] = label_encoder.fit_transform(bbox_annotations['label_name'])
+    encoded_labels = label_encoder.classes_
+    print("Predicted probabilities by class:")
+    for i, prob in enumerate(prediction[0]):
+        print(f"{encoded_labels[i]}: {prob*100:.2f}%")
+
+    predicted_class_index = np.argmax(prediction, axis=1)
+    predicted_label = label_encoder.inverse_transform(predicted_class_index)[0]
+
+    actual_class_name = bbox_annotations[bbox_annotations['image_name'] == random_image]['label_name'].iloc[0]
+
+    fig, ax = plt.subplots()
+    ax.imshow(img)
+    plt.title(f"Predicted Class: {predicted_label}, Actual Class: {actual_class_name}")
+    plt.show()
 
 
-# Usage in your main script
-# from evaluation import evaluate_model
-# evaluate_model(model, test_images)
+# Replace with your actual test dataset
+
+# Assuming these paths are correct, adjust if necessary
+image_dir = 'data/images_dataset'
+csv_path = 'data/labels.csv'
+
+# Load and preprocess data
+bbox_annotations = load_bbox_annotations(csv_path)
+images, boxes, labels = preprocess_images_and_boxes(bbox_annotations, image_dir)
+train_df, test_df = split_data(bbox_annotations)
+
+# Initialize test_images data generator
+_, test_images = create_generators(train_df, test_df, image_dir)
+
+best_model = load_best_model()
+if best_model:
+    evaluate_model(best_model, test_images)
+
+    # Assuming 'history' is saved and loaded similarly to the model
+    # history = load_history()  # Placeholder for your history loading code
+    # plot_history(history)
+
+    # Predicting on random images
+    for i in range(5):
+        predict_random_image(best_model, image_dir, csv_path)
+else:
+    print("Model not found or could not be loaded.")

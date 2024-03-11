@@ -19,7 +19,6 @@ from sklearn.model_selection import KFold
 
 # Import other module functions
 from data_preparation import create_generators, plot_loss_tf
-from evaluation import evaluate_model
 from data_preprocessing import load_bbox_annotations, preprocess_images_and_boxes , plot_image_with_boxes , split_data
 
 num_classes = 3
@@ -36,6 +35,14 @@ images, boxes, labels = preprocess_images_and_boxes(bbox_annotations, image_dir)
 train_df, test_df = split_data(bbox_annotations)
 # Create data generators
 train_images, test_images = create_generators(train_df, test_df, image_dir)
+
+# create train_bboxes and test_bboxes
+train_bboxes = train_df['bbox'].values.tolist()
+test_bboxes = test_df['bbox'].values.tolist()
+
+# create train_labels and test_labels
+train_labels = train_df['label_encoded'].values.tolist()
+test_labels = test_df['label_encoded'].values.tolist()
     
     
 # Create the model
@@ -114,8 +121,9 @@ best_model = models[best_model_index]
 
 # Evaluating the best model (if a separate test set is available)
 # Replace `separate_test_images` and `separate_test_labels` with your actual test data
-results = model.evaluate(test_images)
+results = best_model.evaluate(test_images)
 print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
+
 
 # Plotting training and validation loss and accuracy
 plt.figure(figsize=(12, 4))
@@ -132,55 +140,7 @@ plt.legend()
 plt.title('Training and Validation Loss')
 plt.show()
 
-import random
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
-from sklearn.preprocessing import LabelEncoder
-import pandas as pd
-
-
-
-def predict_random_image(model, image_dir, csv_path, input_shape=(128, 128)):
-    # Load the CSV file to get the labels and bounding boxes
-    bbox_annotations = pd.read_csv(csv_path)
-
-    # List images in the directory (or a predefined list of images)
-    image_files = ['image1.jpeg', 'image2.jpeg', 'image3.jpeg', 'image4.jpeg', 'image5.jpeg' , 'image6.jpeg' , 'image7.jpeg' ]
-    random_image = random.choice(image_files)
+# Save Best Model
+best_model.save('best_model.h5')
     
-    # Load and preprocess the image
-    img = load_img(os.path.join(image_dir, random_image), target_size=input_shape)
-    img_array = img_to_array(img)
-    img_array_expanded = np.expand_dims(img_array, axis=0)  # Add batch dimension
-
-    # Predict the class
-    prediction = model.predict(img_array_expanded)
-    predicted_class_index = np.argmax(prediction, axis=1)
-    label_encoder = LabelEncoder()
-    bbox_annotations['label_encoded'] = label_encoder.fit_transform(bbox_annotations['label_name'])
-    predicted_label = label_encoder.inverse_transform(predicted_class_index)[0]
-
-    # Display the image, bounding box, and prediction
-    fig, ax = plt.subplots()
-    ax.imshow(img)
-
-    # Get the original image dimensions
-    original_img = plt.imread(os.path.join(image_dir, random_image))
-    orig_width, orig_height = original_img.shape[1], original_img.shape[0]
-
-    # Scale factor for bounding boxes
-    x_scale = input_shape[1] / orig_width
-    y_scale = input_shape[0] / orig_height
-
-    # Draw bounding box
-    for _, row in bbox_annotations[bbox_annotations['image_name'] == random_image].iterrows():
-        scaled_rect = patches.Rectangle((row['bbox_x'] * x_scale, row['bbox_y'] * y_scale), 
-                                        row['bbox_width'] * x_scale, row['bbox_height'] * y_scale, 
-                                        linewidth=1, edgecolor='r', facecolor='none')
-        ax.add_patch(scaled_rect)
-
-    plt.title(f"Predicted Class: {predicted_label}, Actual Class: {row['label_name']}")
-    plt.show()
-
-# Example usage
-for i in range(5):
-    predict_random_image(model, image_dir, csv_path)
+    
