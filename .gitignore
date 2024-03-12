@@ -5,20 +5,18 @@ venv/
 *.egg-info/
 dist/
 build/
-data/
+
+# Image files
+*.jpg
+*.jpeg
+*.png
 
 # Machine Learning
 model/
-data/
 *.h5
 *.pkl
 *.pth
 *.npz
 *.npy
-*.csv
 *.tsv
-*.txt
-*.json
 *.xml
-*.yaml
-*.yml
