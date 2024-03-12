@@ -35,7 +35,7 @@ def preprocess_images(df, image_dir, target_size=(128, 128)):
     print(f"Classes: {label_encoder.classes_}")
 
     for idx, row in df.iterrows():
-        img_path = os.path.join(image_dir, row['image_name'])
+        img_path = os.path.join(image_dir, row['image_name'])  # image_name includes the folder
         img = load_img(img_path, target_size=target_size)
         img_array = img_to_array(img) / 255.0  # Normalize to [0, 1]
         images.append(img_array)

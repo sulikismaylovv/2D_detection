@@ -13,7 +13,7 @@ from data_preparation import create_generators
 def load_best_model():
     # Placeholder for your model loading code
     # For example, if you saved your model as 'best_model.h5':
-    model = tf.keras.models.load_model('models/model_1710169839.1884742.h5')
+    model = tf.keras.models.load_model('models/model_1710239768.7770448.h5')
     return model
 
 def evaluate_model(model, test_images):
@@ -41,7 +41,7 @@ def plot_history(history):
     plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
 
-def predict_random_image(model, image_dir, csv_path, input_shape=(128, 128)):
+def predict_random_image(model, image_dir, csv_path, input_shape=(256, 256)):
     bbox_annotations = pd.read_csv(csv_path)
     image_files = bbox_annotations['image_name'].unique().tolist()
     random_image = random.choice(image_files)
@@ -76,13 +76,14 @@ def predict_random_image(model, image_dir, csv_path, input_shape=(128, 128)):
 
 # Replace with your actual test dataset
 
-# Assuming these paths are correct, adjust if necessary
-image_dir = 'data/images_dataset'
-csv_path = 'data/labels.csv'
+image_dir = 'data'  # Make sure this is the correct path to your images
+csv_path = 'data/augmented_labels.csv' # Make sure this is the correct path to your labels
 
-# Load and preprocess data
-bbox_annotations = load_annotations(csv_path)
-train_df, test_df = split_data(bbox_annotations)
+# Load annotations
+annotations = load_annotations(csv_path)
+
+# Split data into training and testing sets
+train_df, test_df = split_data(annotations)
 
 # Initialize test_images data generator
 _, test_images = create_generators(train_df, test_df, image_dir)
@@ -96,7 +97,7 @@ if best_model:
     # plot_history(history)
 
     # Predicting on random images
-    for i in range(0):
+    for i in range(4):
         predict_random_image(best_model, image_dir, csv_path)
 else:
     print("Model not found or could not be loaded.")

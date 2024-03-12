@@ -21,8 +21,8 @@ import os
 
 num_classes = 3
 
-image_dir = 'data/images_dataset'  # Make sure this is the correct path to your images
-csv_path = 'data/labels.csv'  # Make sure this is the correct path to your labels
+image_dir = 'data'  # Make sure this is the correct path to your images
+csv_path = 'data/augmented_labels.csv' # Make sure this is the correct path to your labels
 
 # Load annotations
 annotations = load_annotations(csv_path)
@@ -33,28 +33,12 @@ train_df, test_df = split_data(annotations)
 # Create data generators
 train_images, test_images = create_generators(train_df, test_df, image_dir)
 
-# Assuming you want to generate 5 augmented images per original image
-total_number_per_image = 7
+print(train_images.class_indices)
+print(test_images.class_indices)
 
-# Generate augmented images and update CSV
-#generate_augmented_images_from_generator(train_images, total_number_per_image, "data/augmented_images")
-
-# Update train data with new file names
-augmented_files = os.listdir("data/augmented_images")
-train_df_augmented = train_df.copy()
-
-new_rows = []
-for file_name in augmented_files:
-    if file_name.endswith(".jpg"):
-        new_rows.append({'image_name': file_name, 'label_name': file_name.split("_")[0]})
-
-train_df_augmented = pd.concat([train_df_augmented, pd.DataFrame(new_rows)], ignore_index=True)
-
-# Create data generators again with updated data
-train_images_augmented, _ = create_generators(train_df_augmented, test_df, image_dir)
 
 # Compute class weights
-labels = train_df_augmented['label_name'].values
+labels = train_df['label_name'].values
 unique_labels = np.unique(labels)
 label_to_index = {label: index for index, label in enumerate(unique_labels)}
 train_labels_index = np.array([label_to_index[label] for label in labels])
@@ -62,8 +46,8 @@ train_labels_index = np.array([label_to_index[label] for label in labels])
 # After encoding labels but before training
 class_weights = compute_class_weight(
     class_weight='balanced',
-    classes=np.unique(train_df_augmented['label_encoded']),  # Ensure this uses the encoded labels
-    y=train_df_augmented['label_encoded']
+    classes=np.unique(train_df['label_encoded']),  # Ensure this uses the encoded labels
+    y=train_df['label_encoded']
 )
 class_weights_dict = dict(enumerate(class_weights))
 
@@ -107,7 +91,7 @@ def train_and_evaluate_model(train_data, test_data):
     history = model.fit(
         train_data,
         epochs=30,
-        steps_per_epoch=len(train_data)//32,
+        steps_per_epoch=len(train_data),
         validation_data=test_data,
         validation_steps=len(test_data),
         class_weight=class_weights_dict,
@@ -124,7 +108,7 @@ models = []
 histories = []
 for train, test in kfold.split(labels):
     print(f'Training for fold {fold_no} ...')
-    model, history = train_and_evaluate_model(train_images_augmented, test_images)
+    model, history = train_and_evaluate_model(train_images, test_images)
     models.append(model)
     histories.append(history)
     fold_no += 1
@@ -138,7 +122,7 @@ best_model = models[best_model_index]
 
 # Evaluating the best model (if a separate test set is available)
 # Replace `separate_test_images` and `separate_test_labels` with your actual test data
-results = best_model.evaluate(train_images)
+results = best_model.evaluate(test_images, verbose=0)
 print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
 
 # Plot training and validation loss and accuracy
