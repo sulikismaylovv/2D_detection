@@ -6,14 +6,13 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import os
 import pandas as pd
 import random
-from data_preprocessing import load_annotations, split_data
-from data_preparation import create_generators
+from data_preparation import create_test_generator
 
 # Assuming the model and history are saved during the training process
 def load_best_model():
     # Placeholder for your model loading code
     # For example, if you saved your model as 'best_model.h5':
-    model = tf.keras.models.load_model('models/model_1710239768.7770448.h5')
+    model = tf.keras.models.load_model('models/model_1710271526.733847.h5')
     return model
 
 def evaluate_model(model, test_images):
@@ -76,17 +75,15 @@ def predict_random_image(model, image_dir, csv_path, input_shape=(256, 256)):
 
 # Replace with your actual test dataset
 
-image_dir = 'data'  # Make sure this is the correct path to your images
-csv_path = 'data/augmented_labels.csv' # Make sure this is the correct path to your labels
+image_dir = 'data/test'  # Make sure this is the correct path to your images
+csv_path_test = 'data/test.csv' # Make sure this is the correct path to your labels
 
 # Load annotations
-annotations = load_annotations(csv_path)
+test_df = pd.read_csv(csv_path_test)
 
-# Split data into training and testing sets
-train_df, test_df = split_data(annotations)
-
+#get test imeges
+test_images = create_test_generator(test_df, image_dir)
 # Initialize test_images data generator
-_, test_images = create_generators(train_df, test_df, image_dir)
 
 best_model = load_best_model()
 if best_model:
@@ -97,7 +94,7 @@ if best_model:
     # plot_history(history)
 
     # Predicting on random images
-    for i in range(4):
-        predict_random_image(best_model, image_dir, csv_path)
+    for i in range(3):
+        predict_random_image(best_model, image_dir, csv_path_test)
 else:
     print("Model not found or could not be loaded.")

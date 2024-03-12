@@ -6,6 +6,9 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 
 
+
+
+
 def create_generators(train_data, test_data, image_dir, batch_size=32):
     # ImageDataGenerator for training with augmentation
     train_generator = ImageDataGenerator(
@@ -63,6 +66,24 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
     
 
     return train_images, test_images
+
+def create_test_generator(test_df, image_dir, batch_size=32, target_size=(256, 256)):
+    # Initialize the data generator with rescale to ensure the image is properly normalized
+    datagen = ImageDataGenerator(rescale=1./255)
+
+    # Create the generator to read images found in dataframe
+    test_generator = datagen.flow_from_dataframe(
+        dataframe=test_df,
+        directory=image_dir,
+        x_col="image_name",
+        y_col="label_name",
+        target_size=target_size,
+        batch_size=batch_size,
+        class_mode='categorical',  # choose 'binary' if you have binary classification
+        shuffle=False  # No need to shuffle the test data
+    )
+
+    return test_generator
 
 
 def plot_loss_tf(history):
