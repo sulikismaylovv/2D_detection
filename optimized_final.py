@@ -27,7 +27,9 @@ class LazyModelLoader:
 
 class ModelPipeline:
     def __init__(self, det_model_path, class_model_path, label_csv_path):
+        print("Initializing model pipeline...")
         self.model_loader = LazyModelLoader(det_model_path, class_model_path)
+        print("Loading labels...")
         self.labels = self._load_and_encode_labels(label_csv_path)
 
     def _load_and_encode_labels(self, csv_path):
@@ -83,11 +85,3 @@ class ModelPipeline:
         predicted_class_index = np.argmax(prediction, axis=1)[0]
         return self.labels.inverse_transform([predicted_class_index])[0]
 
-# Example usage
-det_model_path = 'models/detection'
-class_model_path = 'models/model_1710271526.733847.h5'
-label_csv_path = 'data/labels.csv'
-img_path = 'test3.jpeg'
-
-pipeline = ModelPipeline(det_model_path, class_model_path, label_csv_path)
-pipeline.predict_and_interpret(img_path)
