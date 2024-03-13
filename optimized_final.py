@@ -55,6 +55,8 @@ class ModelPipeline:
             iou_threshold=0.1
         )
         
+        results = []
+        
         # Process each detection
         for index in selected_indices.numpy():
             box = det_detections['detection_boxes'][0][index].numpy()
@@ -66,12 +68,23 @@ class ModelPipeline:
             ymin, xmin, ymax, xmax = int(ymin * img_array.shape[0]), int(xmin * img_array.shape[1]), \
                                      int(ymax * img_array.shape[0]), int(xmax * img_array.shape[1])
             
+            box_list = [int(ymin), int(xmin), int(ymax), int(xmax)]
+
             # Crop and predict
             crop_img_array = img_array[ymin:ymax, xmin:xmax]
             prediction = self._predict_image(crop_img_array, input_shape)
             
             predicted_label = self._interpret_prediction(prediction)
-            print(f'Box: {box}, Confidence: {score:.2f}, Label: {predicted_label}')
+            # Add the result to the list, ensuring all data is serializable
+            results.append({
+                "box": box_list,  # Use the list version of box coordinates
+                "confidence": float(score),
+                "label": predicted_label
+            })            
+            
+        print("Detected:", results)
+        return results
+            
     
     def _predict_image(self, img_array, input_shape):
         img = Image.fromarray(img_array)

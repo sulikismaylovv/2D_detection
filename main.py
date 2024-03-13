@@ -12,6 +12,6 @@ response = requests.post(FLASK_PREDICT_URL, json={"img_path": img_path})
 
 # Assuming the Flask app returns a JSON with a "result" key
 if response.status_code == 200:
-    print("Prediction result:", response.json()["result"])
+    print("Prediction result:", response.json())
 else:
     print("Failed to get prediction:", response.text)

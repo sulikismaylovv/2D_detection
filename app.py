@@ -32,6 +32,7 @@ def create_app():
             if not os.path.exists(img_path):
                 raise FileNotFoundError(f"Image path does not exist: {img_path}")
             result = pipeline.predict_and_interpret(img_path)
+            print(f"Prediction result: {result}")
             return jsonify({"result": result})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
