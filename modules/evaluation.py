@@ -100,9 +100,9 @@ def predict_random_image(model, image_dir, csv_path, input_shape=(256, 256)):
 
 # Example usage
 # change model_path to appropriate path
-model_path = 'models/best_model.h5'
-image_dir = 'data/test_images'
-csv_path = 'data/test_annotations.csv'
+model_path = 'models/model_1710271526.733847.h5'
+image_dir = 'data/test'
+csv_path = 'data/test.csv'
 
 model = load_best_model(model_path)
 if model:
