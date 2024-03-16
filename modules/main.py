@@ -121,6 +121,7 @@ def run_kfold_and_select_best_model(k=5):
             best_accuracy = max_val_accuracy
             best_model = model
             best_history = history
+            print(f"Found a better model with validation accuracy: {best_accuracy:.4f}")
     
     return best_model, best_history
 

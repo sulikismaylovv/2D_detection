@@ -1,112 +1,100 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import pandas as pd
-import os
-import random
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+import os
+import pandas as pd
+import random
 from data_preparation import create_test_generator
 
-def load_best_model(model_path):
-    """
-    Loads and returns the best performing model from a given path.
-
-    Args:
-        model_path (str): Path to the saved model file.
-
-    Returns:
-        Loaded TensorFlow model.
-    """
-    try:
-        return tf.keras.models.load_model(model_path)
-    except Exception as e:
-        print(f"Error loading model from {model_path}: {e}")
-        return None
+# Assuming the model and history are saved during the training process
+def load_best_model():
+    # Placeholder for your model loading code
+    # For example, if you saved your model as 'best_model.h5':
+    model = tf.keras.models.load_model('models/model_16/03-13-41.h5')
+    return model
 
 def evaluate_model(model, test_images):
-    """
-    Evaluates the model on the test dataset and prints the results.
-
-    Args:
-        model: The TensorFlow model to evaluate.
-        test_images: The test data generator.
-
-    """
     results = model.evaluate(test_images)
     print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
 
 def plot_history(history):
-    """
-    Plots the training and validation accuracy and loss values from the model's history.
-
-    Args:
-        history: The history object returned from model.fit().
-    """
+    # Plot training & validation accuracy values
     plt.figure(figsize=(12, 6))
-
-    # Plot accuracy
     plt.subplot(1, 2, 1)
-    plt.plot(history.history['accuracy'], label='Train')
-    plt.plot(history.history['val_accuracy'], label='Test')
-    plt.title('Model Accuracy')
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model accuracy')
     plt.ylabel('Accuracy')
     plt.xlabel('Epoch')
-    plt.legend()
+    plt.legend(['Train', 'Test'], loc='upper left')
 
-    # Plot loss
+    # Plot training & validation loss values
     plt.subplot(1, 2, 2)
-    plt.plot(history.history['loss'], label='Train')
-    plt.plot(history.history['val_loss'], label='Test')
-    plt.title('Model Loss')
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
-    plt.legend()
-
+    plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
 
 def predict_random_image(model, image_dir, csv_path, input_shape=(256, 256)):
-    """
-    Predicts a random image from the given directory and prints the prediction.
+    bbox_annotations = pd.read_csv(csv_path)
+    image_files = bbox_annotations['image_name'].unique().tolist()
+    random_image = random.choice(image_files)
 
-    Args:
-        model: The trained TensorFlow model for prediction.
-        image_dir (str): Directory containing the images.
-        csv_path (str): Path to the CSV file with image annotations.
-        input_shape (tuple): Shape to resize images to before prediction.
-    """
-    annotations = pd.read_csv(csv_path)
-    random_image = random.choice(annotations['image_name'].unique())
-    img_path = os.path.join(image_dir, random_image)
-
-    img = load_img(img_path, target_size=input_shape)
-    img_array = img_to_array(img) / 255.0
-    img_array_expanded = np.expand_dims(img_array, axis=0)
+    img = load_img(os.path.join(image_dir, random_image), target_size=input_shape)
+    img_array = img_to_array(img)
+    img_array_expanded = np.expand_dims(img_array, axis=0)  # Add batch dimension
 
     prediction = model.predict(img_array_expanded)
-    print("Raw prediction output:", prediction)
-
-    # Decode prediction
+    
+    # Detailed explanation of prediction
+    print("Raw prediction output (probabilities for each class):", prediction)
+    
+    # For each class, print the probability
     label_encoder = LabelEncoder()
-    annotations['label_encoded'] = label_encoder.fit_transform(annotations['label_name'])
-    predicted_class = label_encoder.inverse_transform([np.argmax(prediction)])[0]
+    bbox_annotations['label_encoded'] = label_encoder.fit_transform(bbox_annotations['label_name'])
+    encoded_labels = label_encoder.classes_
+    print("Predicted probabilities by class:")
+    for i, prob in enumerate(prediction[0]):
+        print(f"{encoded_labels[i]}: {prob*100:.2f}%")
 
-    print(f"Predicted class: {predicted_class}")
-    plt.imshow(img)
-    plt.title(f"Predicted: {predicted_class}")
-    plt.axis('off')
+    predicted_class_index = np.argmax(prediction, axis=1)
+    predicted_label = label_encoder.inverse_transform(predicted_class_index)[0]
+
+    actual_class_name = bbox_annotations[bbox_annotations['image_name'] == random_image]['label_name'].iloc[0]
+
+    fig, ax = plt.subplots()
+    ax.imshow(img)
+    plt.title(f"Predicted Class: {predicted_label}, Actual Class: {actual_class_name}")
     plt.show()
 
-# Example usage
-# change model_path to appropriate path
-model_path = 'models/model_16/03-13-41.h5'
-image_dir = 'data/test'
-csv_path = 'data/test.csv'
 
-model = load_best_model(model_path)
-if model:
-    test_images = create_test_generator(pd.read_csv(csv_path), image_dir)
-    evaluate_model(model, test_images)
-    plot_history(model.history)  # Assuming history is accessible or loaded similarly
-    predict_random_image(model, image_dir, csv_path)
+# Replace with your actual test dataset
+
+image_dir = 'data/test'  # Make sure this is the correct path to your images
+csv_path_test = 'data/test.csv' # Make sure this is the correct path to your labels
+
+# Load annotations
+test_df = pd.read_csv(csv_path_test)
+
+#get test imeges
+test_images = create_test_generator(test_df, image_dir)
+# Initialize test_images data generator
+
+best_model = load_best_model()
+if best_model:
+    evaluate_model(best_model, test_images)
+
+    # Assuming 'history' is saved and loaded similarly to the model
+    # history = load_history()  # Placeholder for your history loading code
+    # plot_history(history)
+
+    # Predicting on random images
+    for i in range(3):
+        predict_random_image(best_model, image_dir, csv_path_test)
+else:
+    print("Model not found or could not be loaded.")
