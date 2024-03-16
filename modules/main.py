@@ -37,24 +37,37 @@ def compute_weights(y):
     class_weights_dict = {i: weight for i, weight in enumerate(class_weights)}
     return class_weights_dict
 
-def create_model(input_shape=(256, 256, 3), num_classes=3):
-    """Creates and returns the VGG16-based model for image classification.
-    
+def create_model(num_classes, input_shape=(256, 256, 3), fine_tune=5):
+    """
+    Creates a custom model for 2D detection.
+
     Args:
-        input_shape (tuple): The shape of the input images.
-        num_classes (int): The number of classes in the dataset.
+        input_shape (tuple): The shape of the input images. Defaults to (256, 256, 3).
+        num_classes (int): The number of classes for classification. Defaults to 3.
+        fine_tune (int): The number of layers to fine-tune in the base model. Defaults to 5.
 
     Returns:
-        A TensorFlow model configured for image classification.
+        tf.keras.Model: The created model.
+
     """
     inputs = Input(shape=input_shape)
     base_model = VGG16(weights='imagenet', include_top=False, input_tensor=inputs)
-    x = Flatten()(base_model.output)
-    x = Dense(512, activation='relu')(x)
-    x = Dropout(0.5)(x)
-    outputs = Dense(num_classes, activation='softmax')(x)
-    
-    model = Model(inputs, outputs)
+
+    # Fine-tuning the top layers of the base model
+    base_model.trainable = True
+    for layer in base_model.layers[:-fine_tune]:
+        layer.trainable = False
+
+    # Flattening the output of the base model
+    flat = Flatten()(base_model.output)
+
+    # Classification head
+    class_head = Dense(512, activation='relu')(flat)
+    class_head = Dropout(0.3)(class_head)
+    class_head = Dense(256, activation='relu')(class_head)
+    classes = Dense(num_classes, activation='softmax', name='classes')(class_head)
+
+    model = Model(inputs=inputs, outputs=classes)
     return model
 
 def train_and_evaluate_model(train_data, test_data, num_classes=3):
@@ -68,7 +81,8 @@ def train_and_evaluate_model(train_data, test_data, num_classes=3):
     Returns:
         The trained model and its training history.
     """
-    model = create_model(num_classes=num_classes)
+    num_classes_x = 3
+    model = create_model(num_classes_x)
     model.compile(optimizer=Adam(learning_rate=1e-4),
               loss='categorical_crossentropy',
               metrics=['accuracy', Precision(), Recall()])
@@ -98,7 +112,8 @@ def run_kfold_and_select_best_model(k=5):
                     
         # Compute class weights for balanced training
         class_weights_dict = compute_weights(train_df['label_name'])
-                    
+        print(f"Class weights: {class_weights_dict}")
+                            
         model, history = train_and_evaluate_model(train_images, test_images, class_weights_dict)
                 
         max_val_accuracy = max(history.history['val_accuracy'])
