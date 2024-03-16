@@ -146,7 +146,7 @@ if __name__ == '__main__':
     plot_loss_tf(history)
     
     # Save the trained model
-    current_time = time.strftime("%d/%m-%H-%M", time.localtime())
+    current_time = time.strftime("%d%m-%H-%M", time.localtime())
     model.save(f'models/model_{current_time}.h5')
     
     print("Model training and evaluation completed.")
