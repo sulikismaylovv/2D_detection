@@ -12,7 +12,7 @@ from data_preparation import create_test_generator
 def load_best_model():
     # Placeholder for your model loading code
     # For example, if you saved your model as 'best_model.h5':
-    model = tf.keras.models.load_model('models/model_1710271526.733847.h5')
+    model = tf.keras.models.load_model('models/model_16/03-13-41.h5')
     return model
 
 def evaluate_model(model, test_images):
