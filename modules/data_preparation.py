@@ -1,3 +1,6 @@
+"""
+Module docstring: This module contains the code for preparing the data for training and testing.
+"""
 
 import numpy as np
 import pandas as pd

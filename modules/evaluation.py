@@ -1,3 +1,7 @@
+"""
+Module docstring: This module contains the code for evaluating the trained model.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf

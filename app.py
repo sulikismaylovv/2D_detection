@@ -1,3 +1,7 @@
+"""
+Module docstring: This module contains the code for the Flask app that serves the combined model.
+"""
+
 from flask import Flask, request, jsonify
 import time
 from lazy_loader import ModelPipeline

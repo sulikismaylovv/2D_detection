@@ -1,3 +1,6 @@
+"""
+Module docstring: This module contains the code for loading the models lazily and performing predictions.
+"""
 import tensorflow as tf
 import numpy as np
 import pandas as pd

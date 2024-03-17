@@ -1,3 +1,7 @@
+"""
+Module docstring: This module combines the detection and classification models to perform inference on an image.
+"""
+
 import tensorflow as tf
 import tensorflow_hub as hub
 from PIL import Image

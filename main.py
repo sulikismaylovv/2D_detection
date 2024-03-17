@@ -1,4 +1,6 @@
-# main.py
+"""
+Module docstring: This module containes the code to request predictions from the Flask app.
+"""
 import requests
 
 # The URL of the Flask endpoint for predictions

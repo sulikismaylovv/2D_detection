@@ -1,5 +1,6 @@
-
-# Description: Module for loading and preprocessing data including images and annotations.
+"""
+Module docstring: This module contains the code for preparing/pre-processing the data for training and testing.
+"""
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.image import load_img, img_to_array

@@ -1,3 +1,6 @@
+"""
+Module docstring: This module contains the code for detecting objects in images.
+"""
 
 import tensorflow as tf
 import tensorflow_hub as hub
@@ -7,14 +10,35 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 def load_model(model_url):
+    """Load and return a model from TensorFlow Hub given a model URL."""
     return hub.load(model_url)
 
 def preprocess_image(img_path):
+    """Preprocess an image for model inference.
+    
+    Args:
+        img_path (str): The file path to the image.
+
+    Returns:
+        tf.Tensor: A tensor representing the processed image.
+    """
     img = Image.open(img_path)
     img_array = np.array(img)
     return tf.convert_to_tensor(np.expand_dims(img_array, 0), dtype=tf.uint8)
 
 def perform_inference(model, input_tensor, confidence_threshold=0.05, max_output_size=200, iou_threshold=0.1):
+    """Perform inference using the model on the input tensor.
+    
+    Args:
+        model: The loaded TensorFlow model.
+        input_tensor (tf.Tensor): The input tensor for the model.
+        confidence_threshold (float, optional): Confidence threshold. Defaults to 0.05.
+        max_output_size (int, optional): Maximum number of output boxes. Defaults to 200.
+        iou_threshold (float, optional): IOU threshold for non-max suppression. Defaults to 0.1.
+
+    Returns:
+        tuple: A tuple containing detection results and selected indices.
+    """
     detections = model(input_tensor)
     selected_indices = tf.image.non_max_suppression(
         detections['detection_boxes'][0],
@@ -25,28 +49,19 @@ def perform_inference(model, input_tensor, confidence_threshold=0.05, max_output
     return detections, selected_indices
 
 def visualize_results(img_array, detections, selected_indices, confidence_threshold):
-    """
-    Visualizes the detection results on the input image.
-
-    Args:
-        img_array (numpy.ndarray): The input image array.
-        detections (dict): The detection results dictionary.
-        selected_indices (numpy.ndarray): The indices of the selected detections.
-        confidence_threshold (float): The confidence threshold for displaying a detection.
-
-    Returns:
-        None
-    """
+    """Visualizes the detection results on the input image."""
     plt.imshow(img_array)
     for index in selected_indices.numpy():
         box = detections['detection_boxes'][0][index].numpy()
         score = detections['detection_scores'][0][index].numpy()
         if score >= confidence_threshold:
             ymin, xmin, ymax, xmax = box
-            ymin, xmin, ymax, xmax = ymin * img_array.shape[0], xmin * img_array.shape[1], ymax * img_array.shape[0], xmax * img_array.shape[1]
+            ymin, xmin, ymax, xmax = (ymin * img_array.shape[0], xmin * img_array.shape[1],
+                                      ymax * img_array.shape[0], xmax * img_array.shape[1])
             rect = Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, fill=False, edgecolor='r', linewidth=2)
             plt.gca().add_patch(rect)
-            plt.gca().text(xmin, ymin - 2, f'{score:.2f}', color='white', fontsize=12, bbox=dict(facecolor='red', alpha=0.5))
+            plt.gca().text(xmin, ymin - 2, f'{score:.2f}', color='white', fontsize=12, 
+                           bbox={'facecolor': 'red', 'alpha': 0.5})
     plt.show()
 
 if __name__ == '__main__':
