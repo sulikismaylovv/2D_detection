@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import time
-from optimized_final import ModelPipeline
+from lazy_loader import ModelPipeline
 import os
 
 def create_app():
