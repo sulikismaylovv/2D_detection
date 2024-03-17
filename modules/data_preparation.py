@@ -1,17 +1,29 @@
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
+import os
 
+def create_image_data_generators(preprocess_input_func, image_dir, train_df, test_df, batch_size=32, target_size=(256, 256)):
+    """
+    Creates image data generators for training and testing.
+    
+    Args:
+        preprocess_input_func: Preprocessing function to apply to each image.
+        image_dir: Directory where images are located.
+        train_df: DataFrame containing training data.
+        test_df: DataFrame containing test data.
+        batch_size: Size of the batches of data.
+        target_size: Tuple of integers, the dimensions to which all images found will be resized.
 
-
-
-
-def create_generators(train_data, test_data, image_dir, batch_size=32):
-    # ImageDataGenerator for training with augmentation
-    train_generator = ImageDataGenerator(
+    Returns:
+        A tuple of (train_generator, test_generator).
+    """
+    # Training ImageDataGenerator with augmentation
+    train_datagen = ImageDataGenerator(
         rotation_range=40,
         width_shift_range=0.2,
         height_shift_range=0.2,
@@ -20,54 +32,85 @@ def create_generators(train_data, test_data, image_dir, batch_size=32):
         horizontal_flip=True,
         vertical_flip=True,
         fill_mode='nearest',
-        preprocessing_function=tf.keras.applications.vgg16.preprocess_input
+        preprocessing_function=preprocess_input_func
     )
-
-    # ImageDataGenerator for testing without augmentation but with preprocessing
-    test_generator = ImageDataGenerator(
-        preprocessing_function=tf.keras.applications.vgg16.preprocess_input
+    
+    # Testing ImageDataGenerator without augmentation, only preprocessing
+    test_datagen = ImageDataGenerator(
+        preprocessing_function=preprocess_input_func
     )
+    
+    # Creating generators
+    train_generator = train_datagen.flow_from_dataframe(
+        dataframe=train_df,
+        directory=image_dir,
+        x_col='image_name',
+        y_col='label_name',
+        target_size=target_size,
+        color_mode='rgb',
+        class_mode='categorical',
+        batch_size=batch_size
+    )
+    
+    test_generator = test_datagen.flow_from_dataframe(
+        dataframe=test_df,
+        directory=image_dir,
+        x_col='image_name',
+        y_col='label_name',
+        target_size=target_size,
+        batch_size=batch_size,
+        class_mode='categorical',
+        shuffle=False
+    )
+    
+    return train_generator, test_generator
 
-    # Encode labels
+def encode_labels(train_df, test_df):
+    """
+    Encodes the labels in the training and testing DataFrame using LabelEncoder and adds the encoded labels as a new column.
+    
+    Args:
+        train_df: DataFrame containing training data.
+        test_df: DataFrame containing test data.
+
+    Returns:
+        A tuple of (train_df, test_df) with the encoded labels added.
+    """
     label_encoder = LabelEncoder()
-    train_data['label_encoded'] = label_encoder.fit_transform(train_data['label_name'])
-    test_data['label_encoded'] = label_encoder.transform(test_data['label_name'])
-
-    num_classes = len(label_encoder.classes_)
-    print(f"Number of classes: {num_classes}")
-
-    # Convert labels to one-hot encoding
-    train_labels = tf.keras.utils.to_categorical(train_data['label_encoded'], num_classes=num_classes)
-    test_labels = tf.keras.utils.to_categorical(test_data['label_encoded'], num_classes=num_classes)
-
-    # Create generators
-    train_images = train_generator.flow_from_dataframe(
-        dataframe=train_data,
-        directory=image_dir,
-        x_col='image_name',
-        y_col='label_name',
-        target_size=(256, 256),
-        color_mode='rgb',
-        class_mode='categorical',
-        batch_size=batch_size
-    )
-
-    test_images = test_generator.flow_from_dataframe(
-        dataframe=test_data,
-        directory=image_dir,
-        x_col='image_name',
-        y_col='label_name',
-        target_size=(256, 256),
-        color_mode='rgb',
-        class_mode='categorical',
-        batch_size=batch_size
-    )
+    train_df['label_encoded'] = label_encoder.fit_transform(train_df['label_name'])
+    test_df['label_encoded'] = label_encoder.transform(test_df['label_name'])
     
+    return train_df, test_df
+
+def plot_loss_tf(history):
+    """
+    Plots the training and validation loss.
+
+    Args:
+        history: A TensorFlow History object from model.fit().
+    """
+    plt.figure(figsize=(10, 4))
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
     
-
-    return train_images, test_images
-
 def create_test_generator(test_df, image_dir, batch_size=32, target_size=(256, 256)):
+    """Creates a data generator for data augmentation for the given test DataFrame.
+
+    Args:
+        test_df: DataFrame containing test data.
+        image_dir: Directory where images are located.
+        batch_size: Size of the batches of data.
+        target_size: Tuple of integers, the dimensions to which all images found will be resized.
+
+    Returns:
+        A data generator for the test data.
+    """
     # Initialize the data generator with rescale to ensure the image is properly normalized
     datagen = ImageDataGenerator(rescale=1./255)
 
@@ -85,43 +128,38 @@ def create_test_generator(test_df, image_dir, batch_size=32, target_size=(256, 2
 
     return test_generator
 
+def generate_augmented_images(generator, output_dir, total_imgs_per_file):
+    """
+    Generates and saves augmented images using a given generator.
 
-def plot_loss_tf(history):
-    fig, ax = plt.subplots(1, 1, figsize=(4, 3))
-    ax.plot(history.history['loss'], label='training_loss')
-    ax.plot(history.history['val_loss'], label='val_loss')
-    ax.set_ylim([0, 2])
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('loss (cost)')
-    ax.legend()
-    ax.grid(True)
-    plt.show()
-
-def widgvis(fig):
-    fig.canvas.toolbar_visible = False
-    fig.canvas.header_visible = False
-    fig.canvas.footer_visible = False
-
-import os
-
-def generate_augmented_images_from_generator(train_generator, total_number_per_image, output_directory):
-    # Create output directory if it doesn't exist
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-    
-    # Initialize the ImageDataGenerator
-    data_gen = train_generator
-    
-    # Generate augmented images
-    for i, (images, labels) in enumerate(data_gen):
-        if i >= len(train_generator.filenames):
+    Args:
+        generator: The ImageDataGenerator's flow_from_dataframe method. (Use create_test_generator to create the generator.)
+        output_dir: Directory where augmented images will be saved.
+        total_imgs_per_file: Number of augmented images to generate per file.
+    """
+    print(f"Generating augmented images to {output_dir}")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        
+    for i, (images, labels) in enumerate(generator):
+        if i >= len(generator.filenames):
             break
-        
-        image_name = os.path.basename(train_generator.filenames[i])
-        image_name_no_extension, _ = os.path.splitext(image_name)
-        
-        for j in range(total_number_per_image):
-            augmented_image_path = os.path.join(output_directory, f"{image_name_no_extension}_{j}.jpg")
-            augmented_image = images[j].astype(np.uint8)
-            tf.keras.preprocessing.image.save_img(augmented_image_path, augmented_image)
+            
+        for j, image in enumerate(images):
+            if j >= total_imgs_per_file:
+                break
+            tf.keras.preprocessing.image.save_img(
+                os.path.join(output_dir, f"augmented_{i}_{j}.png"), 
+                image
+            )
 
+# Example usage:
+# if __name__ == "__main__":
+#     train_df = pd.read_csv('train.csv')  # Adjust path as necessary
+#     test_df = pd.read_csv('test.csv')    # Adjust path as necessary
+#     image_dir = 'path/to/images'
+#     
+#     preprocess_input_func = tf.keras.applications.vgg16.preprocess_input
+#     train_generator, test_generator = create_image_data_generators(
+#         preprocess_input_func, image_dir, train_df, test_df
+#     )
