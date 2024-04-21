@@ -44,6 +44,9 @@ class ModelPipeline:
     def predict_and_interpret(self, img_path, input_shape=(256, 256), confidence_threshold=0.05):
         # Load and preprocess image
         img = Image.open(img_path)
+        if img.mode == 'RGBA':
+            img = img.convert('RGB')
+
         img_array = np.array(img)
         input_tensor = tf.convert_to_tensor([img_array], dtype=tf.uint8)
         
