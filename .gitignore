@@ -10,6 +10,8 @@ build/
 *.jpg
 *.jpeg
 *.png
+*.gif
+*.JPG
 
 # Machine Learning
 model/

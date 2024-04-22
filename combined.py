@@ -51,7 +51,7 @@ class_model_path = 'models/model_1710271526.733847.h5'  # Replace with your mode
 class_model = load_best_model(class_model_path)
 
 # Load and preprocess the image
-img_path = 'test3.jpeg'  # Replace with your image path
+img_path = 'test8.jpg'  # Replace with your image path
 img = Image.open(img_path)
 img_array = np.array(img)
 input_tensor = tf.convert_to_tensor(np.expand_dims(img_array, 0), dtype=tf.uint8)
