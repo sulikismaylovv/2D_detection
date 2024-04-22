@@ -27,11 +27,11 @@ def create_image_data_generators(preprocess_input_func, image_dir, train_df, tes
     """
     # Training ImageDataGenerator with augmentation
     train_datagen = ImageDataGenerator(
-        rotation_range=30,
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        shear_range=0.1,
-        zoom_range=0.1,
+        rotation_range=40,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        shear_range=0.2,
+        zoom_range=0.2,
         horizontal_flip=True,
         vertical_flip=True,
         fill_mode='nearest'
@@ -142,18 +142,27 @@ def generate_augmented_images(generator, output_dir, total_imgs_per_file):
     print(f"Generating augmented images to {output_dir}")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        
-    for i, (images, labels) in enumerate(generator):
-        if i >= len(generator.filenames):
+
+    # Loop over the generator indefinitely
+    img_index = 0
+    for images, labels in generator:
+        # Generate a batch of images
+        for j in range(images.shape[0]):
+            image = images[j].astype(np.uint8)
+            label = labels[j]
+            class_label = label.argmax()  # Assuming labels are one-hot encoded
+
+            # Construct an image name with the class label and image index
+            augmented_image_name = f"aug_{class_label}_{img_index}.jpg"
+            img_index += 1
+
+            # Save the image
+            augmented_image_path = os.path.join(output_dir, augmented_image_name)
+            tf.keras.preprocessing.image.save_img(augmented_image_path, image)
+
+        # Break after generating the specified number of images
+        if img_index >= total_imgs_per_file * len(generator.filenames):
             break
-            
-        image_name = os.path.basename(generator.filenames[i])
-        image_name_no_extension, _ = os.path.splitext(image_name)
-        
-        for j in range(total_imgs_per_file):
-            augmented_image_path = os.path.join(output_dir, f"{image_name_no_extension}_{j}.jpg")
-            augmented_image = images[j].astype(np.uint8)
-            tf.keras.preprocessing.image.save_img(augmented_image_path, augmented_image)
 
 # Example usage:
 # if __name__ == "__main__":

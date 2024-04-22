@@ -47,7 +47,7 @@ det_model_url = 'models/detection'
 det_model = tf.saved_model.load(det_model_url)
 
 # Load classification model
-class_model_path = 'models/model_2204-14-39.h5'  # Replace with your model path
+class_model_path = 'mmodels/model_2204-19-20.keras'  # Replace with your model path
 class_model = load_best_model(class_model_path)
 
 # Load and preprocess the image

@@ -5,18 +5,19 @@ Module docstring: This module contains the main code for training and evaluating
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.applications import VGG16
-from tensorflow.keras.layers import Input, Flatten, Dense, Dropout
+from tensorflow.keras.layers import Input, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import Precision, Recall
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, ModelCheckpoint, ReduceLROnPlateau
 import numpy as np
 import pandas as pd
 import os
 import time
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.regularizers import l2
 
 
 # Assuming other modules are refactored as well
@@ -55,23 +56,31 @@ def create_model(num_classes, input_shape=(256, 256, 3), fine_tune=5):
     """
     inputs = Input(shape=input_shape)
     base_model = VGG16(weights='imagenet', include_top=False, input_tensor=inputs)
-
-    # Fine-tuning the top layers of the base model
     base_model.trainable = True
     for layer in base_model.layers[:-fine_tune]:
         layer.trainable = False
 
-    # Flattening the output of the base model
-    flat = Flatten()(base_model.output)
+    x = Flatten()(base_model.output)
+    x = Dense(512, activation='relu', kernel_regularizer=l2(0.01))(x)
+    x = BatchNormalization()(x)
+    x = Dropout(0.3)(x)
+    x = Dense(256, activation='relu', kernel_regularizer=l2(0.01))(x)
+    x = BatchNormalization()(x)
+    outputs = Dense(num_classes, activation='softmax', name='classes')(x)
 
-    # Classification head
-    class_head = Dense(512, activation='relu')(flat)
-    class_head = Dropout(0.3)(class_head)
-    class_head = Dense(256, activation='relu')(class_head)
-    classes = Dense(num_classes, activation='softmax', name='classes')(class_head)
-
-    model = Model(inputs=inputs, outputs=classes)
+    model = Model(inputs=inputs, outputs=outputs)
     return model
+
+def step_decay(epoch):
+    """
+    Learning rate schedule that decreases the learning rate according to a step function.
+    """
+    initial_lrate = 1e-4
+    drop = 0.5  # More aggressive drop
+    epochs_drop = 5.0  # Drop more frequently
+    lrate = initial_lrate * drop ** np.floor((1 + epoch) / epochs_drop)
+    return lrate
+
 
 def train_and_evaluate_model(train_data, test_data, num_classes=3):
     """Trains and evaluates the model using the provided data.
@@ -84,40 +93,46 @@ def train_and_evaluate_model(train_data, test_data, num_classes=3):
     Returns:
         The trained model and its training history.
     """
-    num_classes_x = num_classes
-    model = create_model(num_classes_x)
+    model = create_model(num_classes)
     model.compile(optimizer=Adam(learning_rate=1e-4),
-              loss='categorical_crossentropy',
-              metrics=['accuracy', Precision(), Recall()])
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy', Precision(), Recall()])
 
     early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+    lrate_scheduler = LearningRateScheduler(step_decay)
+    
+    checkpoint = ModelCheckpoint('models/model_1710271526.733847.keras', save_best_only=True, monitor='val_loss', mode='min')
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=1e-6, verbose=1)
 
     history = model.fit(
         train_data,
         epochs=30,
         validation_data=test_data,
-        callbacks=[early_stopping]
-    )
+        callbacks=[early_stopping, lrate_scheduler, checkpoint, reduce_lr]
+    )   
     return model, history
 
 
 
+
 def run_kfold_and_select_best_model(k=5):
-    kfold = KFold(n_splits=k, shuffle=True)
+    """
+    Applies Stratified K-Fold cross-validation to train and select the best model based on validation accuracy.
+    """
+    y = annotations['label_name']
+    skf = StratifiedKFold(n_splits=k, shuffle=True)
     best_accuracy = 0
     best_model = None
-    
 
-    for fold, (train_idx, test_idx) in enumerate(kfold.split(annotations), start=1):
+    for fold, (train_idx, test_idx) in enumerate(skf.split(annotations, y), start=1):
         print(f"Training on fold {fold}...")
         train_df, test_df = annotations.iloc[train_idx], annotations.iloc[test_idx]
         train_images, test_images = create_image_data_generators(preprocess_func, image_dir, train_df, test_df)
-                    
-        # Compute class weights for balanced training
+        
         class_weights_dict = compute_weights(train_df['label_name'])
         print(f"Class weights: {class_weights_dict}")
-                            
-        model, history = train_and_evaluate_model(train_images, test_images, class_weights_dict)
+                        
+        model, history = train_and_evaluate_model(train_images, test_images, len(np.unique(y)))
                 
         max_val_accuracy = max(history.history['val_accuracy'])
         if max_val_accuracy > best_accuracy:
@@ -127,6 +142,7 @@ def run_kfold_and_select_best_model(k=5):
             print(f"Found a better model with validation accuracy: {best_accuracy:.4f}")
     
     return best_model, best_history
+
 
 if __name__ == '__main__':
     num_classes = 3
@@ -156,6 +172,6 @@ if __name__ == '__main__':
     
     # Save the trained model
     current_time = time.strftime("%d%m-%H-%M", time.localtime())
-    model.save(f'models/model_{current_time}.h5')
+    model.save(f'models/model_{current_time}.keras')
     
     print("Model training and evaluation completed.")
