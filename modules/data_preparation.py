@@ -27,15 +27,14 @@ def create_image_data_generators(preprocess_input_func, image_dir, train_df, tes
     """
     # Training ImageDataGenerator with augmentation
     train_datagen = ImageDataGenerator(
-        rotation_range=40,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
-        zoom_range=0.2,
+        rotation_range=30,
+        width_shift_range=0.1,
+        height_shift_range=0.1,
+        shear_range=0.1,
+        zoom_range=0.1,
         horizontal_flip=True,
         vertical_flip=True,
-        fill_mode='nearest',
-        preprocessing_function=preprocess_input_func
+        fill_mode='nearest'
     )
     
     # Testing ImageDataGenerator without augmentation, only preprocessing
@@ -148,13 +147,13 @@ def generate_augmented_images(generator, output_dir, total_imgs_per_file):
         if i >= len(generator.filenames):
             break
             
-        for j, image in enumerate(images):
-            if j >= total_imgs_per_file:
-                break
-            tf.keras.preprocessing.image.save_img(
-                os.path.join(output_dir, f"augmented_{i}_{j}.png"), 
-                image
-            )
+        image_name = os.path.basename(generator.filenames[i])
+        image_name_no_extension, _ = os.path.splitext(image_name)
+        
+        for j in range(total_imgs_per_file):
+            augmented_image_path = os.path.join(output_dir, f"{image_name_no_extension}_{j}.jpg")
+            augmented_image = images[j].astype(np.uint8)
+            tf.keras.preprocessing.image.save_img(augmented_image_path, augmented_image)
 
 # Example usage:
 # if __name__ == "__main__":
