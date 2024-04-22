@@ -84,7 +84,7 @@ def train_and_evaluate_model(train_data, test_data, num_classes=3):
     Returns:
         The trained model and its training history.
     """
-    num_classes_x = 3
+    num_classes_x = num_classes
     model = create_model(num_classes_x)
     model.compile(optimizer=Adam(learning_rate=1e-4),
               loss='categorical_crossentropy',
@@ -132,12 +132,16 @@ if __name__ == '__main__':
     num_classes = 3
     image_dir = 'data/'  # Updated to more explicitly define image directory
     csv_path = 'data/augmented_labels.csv'  # Updated for clarity 
+    #csv_path_test = 'data/test.csv'
     
     annotations = load_annotations(csv_path)
+    #test_annotations = load_annotations(csv_path_test)
     # Uncomment this if code is running on LINUX or MacOS
     annotations['image_name'] = annotations['image_name'].str.replace('\\', '/', regex=False)
     
     train_df, test_df = split_data(annotations)
+    #train_df = annotations
+    #test_df = test_annotations
     
     preprocess_func = tf.keras.applications.vgg16.preprocess_input
     #train_images, test_images = create_image_data_generators(preprocess_func, image_dir, train_df, test_df)
