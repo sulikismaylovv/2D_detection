@@ -67,11 +67,11 @@ def visualize_results(img_array, detections, selected_indices, confidence_thresh
 if __name__ == '__main__':
     # Configuration
     config = {
-        'model_url': 'https://www.kaggle.com/models/google/faster-rcnn-inception-resnet-v2/TensorFlow1/faster-rcnn-openimages-v4-inception-resnet-v2/1',
-        'img_path': 'testV2/test2.jpg',
-        'confidence_threshold': 0.3,
-        'max_output_size': 300,
-        'iou_threshold': 0.01
+        'model_url': 'https://tfhub.dev/tensorflow/efficientdet/d4/1',
+        'img_path': 'testV2/test1.jpg',
+        'confidence_threshold': 0.05,
+        'max_output_size': 200,
+        'iou_threshold': 0.1
     }
 
     # Process
