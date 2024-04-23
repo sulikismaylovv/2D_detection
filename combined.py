@@ -47,11 +47,11 @@ det_model_url = 'models/detection'
 det_model = tf.saved_model.load(det_model_url)
 
 # Load classification model
-class_model_path = 'mmodels/model_2204-19-20.keras'  # Replace with your model path
+class_model_path = 'models/model_2204-19-20.keras'  # Replace with your model path
 class_model = load_best_model(class_model_path)
 
 # Load and preprocess the image
-img_path = 'test3.jpeg'  # Replace with your image path
+img_path = 'testV2/test15.jpg'  # Replace with your image path
 img = Image.open(img_path)
 img_array = np.array(img)
 input_tensor = tf.convert_to_tensor(np.expand_dims(img_array, 0), dtype=tf.uint8)
@@ -66,8 +66,8 @@ confidence_threshold = 0.05
 selected_indices = tf.image.non_max_suppression(
     det_detections['detection_boxes'][0],
     det_detections['detection_scores'][0],
-    max_output_size=100,  # Adjust as needed
-    iou_threshold=0.1   # Adjust as needed
+    max_output_size=50,  # Adjust as needed
+    iou_threshold=0.01   # Adjust as needed
 )
 
 # Process detections and classify each box
