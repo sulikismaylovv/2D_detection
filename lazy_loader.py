@@ -57,8 +57,8 @@ class ModelPipeline:
         selected_indices = tf.image.non_max_suppression(
             det_detections['detection_boxes'][0],
             det_detections['detection_scores'][0],
-            max_output_size=100,
-            iou_threshold=0.1
+            max_output_size=50,  # Adjust as needed
+            iou_threshold=0.01   # Adjust as needed
         )
         
         results = []
@@ -84,6 +84,8 @@ class ModelPipeline:
             # Add the result to the list, ensuring all data is serializable
             results.append({
                 "box": box_list,  # Use the list version of box coordinates
+                "dimensions": f"{ymax - ymin}x{xmax - xmin}",  # Add dimensions for convenience
+                "center": [int((xmin + xmax) / 2), int((ymin + ymax) / 2)],  # Add center coordinates for convenience
                 "confidence": float(score),
                 "label": predicted_label
             })            

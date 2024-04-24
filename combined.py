@@ -51,7 +51,7 @@ class_model_path = 'models/model_2204-19-20.keras'  # Replace with your model pa
 class_model = load_best_model(class_model_path)
 
 # Load and preprocess the image
-img_path = 'testV2/test15.jpg'  # Replace with your image path
+img_path = 'testV2/test11.jpg'  # Replace with your image path
 img = Image.open(img_path)
 img_array = np.array(img)
 input_tensor = tf.convert_to_tensor(np.expand_dims(img_array, 0), dtype=tf.uint8)

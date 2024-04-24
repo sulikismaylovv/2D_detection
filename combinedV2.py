@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+import itertools
 
 # Assuming the model and history are saved during the training process
 def load_best_model(model_path):
@@ -39,12 +40,12 @@ class_model_path = 'models/model_2204-19-20.keras'  # Replace with your model pa
 class_model = load_best_model(class_model_path)
 
 # Load and preprocess the image using OpenCV
-img_path = 'testV2/test11.jpg'  # Replace with your image path
+img_path = 'testV2/test15.jpg'  # Replace with your image path
 img = cv2.imread(img_path)
 # convert to grayscale
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
-edged = cv2.Canny(gray, 45, 194)
+edged = cv2.Canny(gray, 30, 194)
 # Apply adaptive threshold
 thresh = cv2.adaptiveThreshold(edged, 255, 1, 1, 3, 2)
 thresh_color = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
@@ -60,6 +61,10 @@ contours,hierarchy = cv2.findContours(thresh,
 
 # Convert back to color image for drawing
 img_color = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+# Define a list of colors for the bounding boxes
+colors = ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan', 'black', 'white']
+color_cycle = itertools.cycle(colors)  # Create a cycle from the color list
 
 # Process each contour as a detection
 for cnt in contours:
@@ -77,10 +82,16 @@ for cnt in contours:
         print(f"Raw prediction output (probabilities for each class): {prediction}")
         print(f"Predicted label: {predicted_label}")
 
-        # Draw the bounding box and label on the image
-        rect = Rectangle((x, y), w, h, fill=False, edgecolor='r', linewidth=2)
+        # Get the next color from the cycle
+        current_color = next(color_cycle)
+        print(f"Color of the bounding box: {current_color}")
+        # Print line break for better visibility
+        print("\n\n")
+
+        # Draw the bounding box and label on the image with different colors
+        rect = Rectangle((x, y), w, h, fill=False, edgecolor=current_color, linewidth=2)
         plt.gca().add_patch(rect)
-        plt.gca().text(x, y, f'{predicted_label}', color='white', fontsize=12, bbox=dict(facecolor='red', alpha=0.5))
+        plt.gca().text(x, y, f'{predicted_label}', color='white', fontsize=12, bbox=dict(facecolor=current_color, alpha=0.5))
 
 # Show the original image with bounding boxes and recognition labels
 plt.imshow(img_color)
