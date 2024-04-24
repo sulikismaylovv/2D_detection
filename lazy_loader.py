@@ -92,6 +92,20 @@ class ModelPipeline:
             
         print("Detected:", results)
         return results
+    
+    def predict_and_interpret_classification(self, img_path, input_shape=(256, 256)):
+        # Load and preprocess image
+        img = Image.open(img_path)
+        if img.mode == 'RGBA':
+            img = img.convert('RGB')
+
+        img_array = np.array(img)
+        
+        # Predict
+        prediction = self._predict_image(img_array, input_shape)
+        predicted_label = self._interpret_prediction(prediction)
+        
+        return predicted_label
             
     
     def _predict_image(self, img_array, input_shape):

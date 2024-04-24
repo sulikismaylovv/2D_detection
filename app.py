@@ -40,9 +40,26 @@ def create_app():
             return jsonify({"result": result})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+        
+    @app.route('/predict_box', methods=['POST'])
+    def predict_box():
+        # Prediction endpoint
+        try:
+            data = request.json
+            img_path = data['img_path']
+            if not os.path.exists(img_path):
+                raise FileNotFoundError(f"Image path does not exist: {img_path}")
+            result = pipeline.predict_and_interpret_classification(img_path)
+            print(f"Prediction result: {result}")
+            return jsonify({"result": result})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
     print("Flask app ready to serve requests.")
     return app
+
+    
+        
 
 if __name__ == '__main__':
     app = create_app()
