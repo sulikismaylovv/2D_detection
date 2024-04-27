@@ -16,11 +16,14 @@ from data_preparation import create_test_generator
 def load_best_model():
     # Placeholder for your model loading code
     # For example, if you saved your model as 'best_model.h5':
-    model = tf.keras.models.load_model('models/model_2204-19-20.keras')
+    model = tf.keras.models.load_model('models/model_2704-19-16.keras')
     return model
 
 def evaluate_model(model, test_images):
     results = model.evaluate(test_images)
+    print("Model Performance on Test Data:")
+    print(model.metrics_names)
+    print(results)
     print(f"Test Loss: {results[0]}, Test Accuracy: {results[1]}")
 
 def plot_history(history):

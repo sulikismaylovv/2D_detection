@@ -101,7 +101,7 @@ def train_and_evaluate_model(train_data, test_data, num_classes=3):
     early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
     lrate_scheduler = LearningRateScheduler(step_decay)
     
-    checkpoint = ModelCheckpoint('models/model_1710271526.733847.keras', save_best_only=True, monitor='val_loss', mode='min')
+    checkpoint = ModelCheckpoint('models/model_2204-19-20.keras', save_best_only=True, monitor='val_loss', mode='min')
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=1e-6, verbose=1)
 
     history = model.fit(
@@ -145,7 +145,7 @@ def run_kfold_and_select_best_model(k=5):
 
 
 if __name__ == '__main__':
-    num_classes = 3
+    num_classes = 4
     image_dir = 'data/'  # Updated to more explicitly define image directory
     csv_path = 'data/augmented_labels.csv'  # Updated for clarity 
     #csv_path_test = 'data/test.csv'

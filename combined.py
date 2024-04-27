@@ -31,7 +31,7 @@ def predict_image(model, img_array, input_shape=(256, 256)):
 def interpret_prediction(prediction):
     # Convert the prediction probabilities to class labels
     label_encoder = LabelEncoder()
-    bbox_annotations = pd.read_csv('data/labels.csv')  # Replace with your CSV path
+    bbox_annotations = pd.read_csv('data/augmented_labels.csv')  # Replace with your CSV path
     bbox_annotations['label_encoded'] = label_encoder.fit_transform(bbox_annotations['label_name'])
     encoded_labels = label_encoder.classes_
     
@@ -47,11 +47,11 @@ det_model_url = 'models/detection'
 det_model = tf.saved_model.load(det_model_url)
 
 # Load classification model
-class_model_path = 'models/model_2204-19-20.keras'  # Replace with your model path
+class_model_path = 'models/model_2704-19-16.keras'  # Replace with your model path
 class_model = load_best_model(class_model_path)
 
 # Load and preprocess the image
-img_path = 'testV2/test11.jpg'  # Replace with your image path
+img_path = 'testV2/test20.jpg'  # Replace with your image path
 img = Image.open(img_path)
 img_array = np.array(img)
 input_tensor = tf.convert_to_tensor(np.expand_dims(img_array, 0), dtype=tf.uint8)
@@ -97,7 +97,7 @@ for index in selected_indices.numpy():
         # Draw the bounding box and label on the image
         rect = Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, fill=False, edgecolor='r', linewidth=2)
         plt.gca().add_patch(rect)
-        plt.gca().text(xmin, ymax, f'{predicted_label} ({score:.2f})', color='white', fontsize=12, bbox=dict(facecolor='red', alpha=0.5))
+        plt.gca().text(xmin, ymax, f'{predicted_label}', color='white', fontsize=12, bbox=dict(facecolor='red', alpha=0.5))
 
 # Show the original image with bounding boxes and recognition labels
 plt.imshow(img_array)
