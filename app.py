@@ -15,9 +15,15 @@ def create_app():
 
     print("Loading models...")
     start_time = time.time()  # Start timer
+    
+    # Get Latest model path from the models folder
+    model_path = 'models'
+    model_name = os.listdir(model_path)[-1]
+    model_path = os.path.join(model_path, model_name)
+    
 
     # Initialize your model pipeline here
-    pipeline = ModelPipeline('models/detection', 'models/model_2704-19-16.keras', 'data/labels.csv')
+    pipeline = ModelPipeline('models/detection', model_path, 'data/labels.csv')
 
     elapsed_time = time.time() - start_time  # Calculate elapsed time
     print(f"Models loaded in {elapsed_time:.2f} seconds.")
